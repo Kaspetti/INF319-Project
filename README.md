@@ -1,7 +1,7 @@
 # INF319-Project
 
 ## Goal
-Visualizing networks is a difficult task which gets even more complicated once we start talking about **dynamic networks**. Dynamic networks are networks that change over time, and visualizing this in a good way provides many challenges. S. van den Elzen et al. write in [this](doi.org/10.1109/TVCG.2015.2468078) paper about some tasks to solve when visualizing dynamic networks and how to solve them. These tasks include:
+Visualizing networks is a difficult task which gets even more complicated once we start talking about **dynamic networks**. Dynamic networks are networks that change over time, and visualizing this in a good way provides many challenges. S. van den Elzen et al. write in [this](https://www.doi.org/10.1109/TVCG.2015.2468078) paper about some tasks to solve when visualizing dynamic networks and how to solve them. These tasks include:
 * Identification
     * Stable states
     * Recurring states
