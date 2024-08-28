@@ -1,4 +1,10 @@
 .venv/
 __pycache__/
 
+*.nc
+
 paper.pdf
+
+package-lock.json
+package.json
+node_modules/
