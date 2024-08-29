@@ -6,6 +6,14 @@
     <script src="https://d3js.org/d3.v7.min.js"></script>
   </head>
   <body>
+    <label for="sim-start-input">Simulation Start: </label>
+    <input type="text" name="sim-start-input" id="sim-start-input" value="2024082712">
+    <br>
+    <label for="time-offset-input">Time Offset: </label>
+    <input type="number" name="time-offset-input" id="time-offset-input" value="0">
+    <br>
+    <button onclick="createGraph()">Create Graph</button>
+
     <div id="graph"></div>
 
     <script src="static/js/index.js"></script>

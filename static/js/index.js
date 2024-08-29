@@ -1,18 +1,22 @@
 /// <reference types="d3" />
 
+const width = 1280
+const height = 720
 
-async function initGraph() {
-  const width = 1280
-  const height = 720
+const simStartInput = document.getElementById("sim-start-input")
+const timeOffsetInput = document.getElementById("time-offset-input")
 
-  const svg = d3.select("#graph")  
-    .append("svg")
-      .attr("width", width)
-      .attr("height", height)
-      .attr("viewBox", [0, 0, width, height])
-    .attr("style", "max-width: 100%; height: auto; height: intrinsic")
 
-  const data = await d3.json("/api/get-network?sim-start=2024082712&time-offset=0") 
+function createGraph() {
+  d3.select("#graph svg").selectAll("g").remove()
+  populateGraph(simStartInput.value, timeOffsetInput.value)
+}
+
+
+async function populateGraph(simStart, timeOffset) {
+  const svg = d3.select("#graph svg")
+
+  const data = await d3.json(`/api/get-network?sim-start=${simStart}&time-offset=${timeOffset}`) 
   const links = data.links.map(d => ({...d}))
   const nodes = data.nodes.map(d => ({...d}))
 
@@ -25,40 +29,40 @@ async function initGraph() {
     .on("tick", ticked)
 
   const link = svg.append("g")
-      .attr("stroke", "#999")
-      .attr("stroke-opacity", 0.6)
+    .attr("stroke", "#999")
+    .attr("stroke-opacity", 0.6)
     .selectAll()
     .data(links)
     .join("line")
-      .attr("stroke-width", d => (3 - (d.dist_sqrd / 500) * 2))
+    .attr("stroke-width", d => (3 - (d.dist_sqrd / 500) * 2))
 
   const node = svg.append("g")
-      .attr("stroke", "#fff")
-      .attr("stroke-width", 1.5)
+    .attr("stroke", "#fff")
+    .attr("stroke-width", 1.5)
     .selectAll()
     .data(nodes)
     .join("circle")
-      .attr("r", 5)
-      .attr("fill", "blue");
+    .attr("r", 5)
+    .attr("fill", "blue");
 
   node.append("title")
     .text(d => d.id)
 
   node.call(d3.drag()
-        .on("start", dragstarted)
-        .on("drag", dragged)
-        .on("end", dragended));
+    .on("start", dragstarted)
+    .on("drag", dragged)
+    .on("end", dragended));
 
   function ticked() {
     link
-        .attr("x1", d => d.source.x)
-        .attr("y1", d => d.source.y)
-        .attr("x2", d => d.target.x)
-        .attr("y2", d => d.target.y);
+      .attr("x1", d => d.source.x)
+      .attr("y1", d => d.source.y)
+      .attr("x2", d => d.target.x)
+      .attr("y2", d => d.target.y);
 
     node
-        .attr("cx", d => d.x)
-        .attr("cy", d => d.y);
+      .attr("cx", d => d.x)
+      .attr("cy", d => d.y);
   }
 
   function dragstarted(event) {
@@ -77,6 +81,18 @@ async function initGraph() {
     event.subject.fx = null;
     event.subject.fy = null;
   }
+}
+
+
+async function initGraph() {
+  d3.select("#graph")  
+    .append("svg")
+      .attr("width", width)
+      .attr("height", height)
+      .attr("viewBox", [0, 0, width, height])
+    .attr("style", "max-width: 100%; height: auto; height: intrinsic")
+
+  populateGraph("2024082712", 0)
 }
 
 
