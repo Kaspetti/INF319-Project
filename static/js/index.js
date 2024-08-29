@@ -30,7 +30,7 @@ async function initGraph() {
     .selectAll()
     .data(links)
     .join("line")
-      .attr("stroke-width", 1)
+      .attr("stroke-width", d => (3 - (d.dist_sqrd / 500) * 2))
 
   const node = svg.append("g")
       .attr("stroke", "#fff")
