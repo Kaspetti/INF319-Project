@@ -12,7 +12,7 @@ async function initGraph() {
       .attr("viewBox", [0, 0, width, height])
     .attr("style", "max-width: 100%; height: auto; height: intrinsic")
 
-  const data = await d3.json("/api/get-network") 
+  const data = await d3.json("/api/get-network?sim-start=2024082712&time-offset=0") 
   const links = data.links.map(d => ({...d}))
   const nodes = data.nodes.map(d => ({...d}))
 
