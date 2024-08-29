@@ -12,7 +12,15 @@ def index():
 
 @app.route("/api/get-network")
 def get_network():
-    lines = read_data("2024082712", 0, 0)
-    centers = [get_geometric_center(line["coords"]) for line in lines]
+    lines = []
+    for i in range(50):
+        lines += read_data("2024082712", i, 0)
 
-    return jsonify(generate_network(centers, 1000))
+    centers = []
+    for line in lines:
+        centers.append({
+            "id": f"{line['sim_id']}|{int(line['line_id'])}",
+            "center": get_geometric_center(line["coords"])
+        })
+
+    return jsonify(generate_network(centers, 500))

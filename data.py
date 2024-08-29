@@ -50,7 +50,8 @@ def read_data(start, sim_id, time_offset):
     grouped_ds = list(date_ds.groupby("line_id"))
     for id, line in grouped_ds:
         lines.append({
-            "id": id,
+            "sim_id": sim_id,
+            "line_id": id,
             "coords": np.column_stack(
                 (line.latitude.values, line.longitude.values)
             )
@@ -74,25 +75,35 @@ def generate_network(centers, max_dist):
     [{ nodes, links }] : A list of nodes and links representing the network
     '''
 
-    centers = np.array(centers)
+    coords = np.array([center["center"] for center in centers])
 
     nodes = []
     links = []
 
     for i in range(len(centers)):
-        nodes.append({"id": i})
+        nodes.append({"id": centers[i]["id"]})
         for j in range(i+1, len(centers)):
-            dist = np.sum((centers[i] - centers[j])**2)
+            dist = np.sum((coords[i] - coords[j])**2)
             if dist > max_dist:
                 continue
 
-            links.append({"source": i, "target": j, "dist_sqrd": float(dist)})
+            links.append({"source": centers[i]["id"], "target": centers[j]["id"], "dist_sqrd": float(dist)})
 
     return {"nodes": nodes, "links": links}
 
 
 if __name__ == "__main__":
-    lines = read_data("2024082712", 0, 0)
-    centers = np.array([get_geometric_center(line["coords"]) for line in lines])
+    lines = []
+    for i in range(50):
+        lines += read_data("2024082712", i, 0)
 
-    print(generate_network(centers, 1000))
+    centers = []
+    for line in lines:
+        centers.append({
+            "id": f"{line['sim_id']}|{int(line['line_id'])}",
+            "center": get_geometric_center(line["coords"])
+        })
+
+    # centers = np.array([get_geometric_center(line["coords"]) for line in lines])
+    #
+    print(generate_network(centers, 4000))
