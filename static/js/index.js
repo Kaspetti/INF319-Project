@@ -5,10 +5,14 @@ const height = 720
 
 const simStartInput = document.getElementById("sim-start-input")
 const timeOffsetInput = document.getElementById("time-offset-input")
+const header = document.getElementById("header")
 
 
 function createGraph() {
   d3.select("#graph svg").selectAll("g").remove()
+
+  header.innerText = `Network for ${simStartInput.value} ${timeOffsetInput.value}h`
+
   populateGraph(simStartInput.value, timeOffsetInput.value)
 }
 
@@ -24,7 +28,7 @@ async function populateGraph(simStart, timeOffset) {
     .force("link", d3.forceLink(links).id(d => d.id))
     .force("charge", d3.forceManyBody())
     .force("center", d3.forceCenter(width / 2, height / 2))
-    .force("x", d3.forceX(width / 2).strength(0.15))
+    .force("x", d3.forceX(width / 2).strength(0.075))
     .force("y", d3.forceY(height / 2).strength(0.15))
     .on("tick", ticked)
 
