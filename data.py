@@ -1,6 +1,5 @@
 import xarray as xr
 import numpy as np
-import matplotlib.pyplot as plt
 
 
 def get_geometric_center(cs):
@@ -104,6 +103,4 @@ if __name__ == "__main__":
             "center": get_geometric_center(line["coords"])
         })
 
-    # centers = np.array([get_geometric_center(line["coords"]) for line in lines])
-    #
     print(generate_network(centers, 4000))
