@@ -8,3 +8,9 @@ paper.pdf
 package-lock.json
 package.json
 node_modules/
+
+sigma/__pycache__/
+sigma/package-lock.json
+sigma/package.json
+sigma/node_modules/
+sigma/dist/
