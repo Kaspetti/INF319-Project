@@ -3,6 +3,8 @@ import Graph from "graphology"
 import FA2Layout from 'graphology-layout-forceatlas2/worker';
 import { inferSettings } from "graphology-layout-forceatlas2";
 import { json } from "d3-fetch"
+import { scaleLinear } from "d3-scale"
+import { rgb } from "d3-color"
 
 
 document.getElementById("show-graph-button").onclick = updateGraph
@@ -31,12 +33,26 @@ async function populateGraph(simStart, timeOffset, distThreshold) {
   const links = data.links.map(d => ({...d}))
   const nodes = data.nodes.map(d => ({...d}))
 
+  const weights = links.map(l => distThreshold - l.dist_sqrd)
+  const colorScale = scaleLinear()
+    .domain([Math.min(...weights), Math.max(...weights)])
+    .range(["#ff0000", "#0000ff"])
+
   nodes.forEach(n => {
-    graph.addNode(n.id, {size: 2, color: "blue", label: n.id, x: Math.random(), y: Math.random()})
+    graph.addNode(n.id, {size: 4, color: "orange", label: n.id, x: Math.random(), y: Math.random()})
   })
 
   links.forEach(l => {
-    graph.addEdge(l.source, l.target, { type: "line", label: l.dist_sqrd, size: 1, weight: distThreshold - l.dist_sqrd})
+    const weight = distThreshold - l.dist_sqrd
+    const color = rgb(colorScale(weight)).formatHex()
+
+    graph.addEdge(l.source, l.target, {
+      type: "line",
+      label: l.dist_sqrd,
+      size: 1,
+      color: color,
+      weight: weight
+    })
   })
   
 

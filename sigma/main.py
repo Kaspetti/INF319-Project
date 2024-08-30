@@ -43,11 +43,4 @@ def get_network(sim_start: str = "2024082712",
     for i in range(50):
         lines += read_data(sim_start, i, time_offset)
 
-    centers = []
-    for line in lines:
-        centers.append({
-            "id": f"{line['sim_id']}|{int(line['line_id'])}",
-            "center": get_geometric_center(line["coords"])
-        })
-
-    return generate_network(centers, dist_threshold)
+    return generate_network(lines, dist_threshold)

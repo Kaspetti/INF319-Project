@@ -1,5 +1,6 @@
 import xarray as xr
 import numpy as np
+from scipy.spatial.distance import cdist
 
 
 def get_geometric_center(cs):
@@ -16,6 +17,46 @@ def get_geometric_center(cs):
     '''
 
     return [np.sum(cs[:, 0]) / len(cs), np.sum(cs[:, 1]) / len(cs)]
+
+
+def get_distances(line, lines):
+    '''
+    Gets the distances from one line to all other lines.
+    Distance is calculated by calculating the distance of each
+    point in the line with the closest point in another line,
+    summing these up, and taking the average.
+
+    Parameters
+    ----------
+    line : the line to calculate from
+    lines : all lines (including "line")
+
+    Returns
+    -------
+    a list of distances between one line and all others
+    '''
+
+    # coords = [line["coords"] for line in lines]
+    temp_dists = [
+        cdist(lines[0]["coords"], line["coords"])
+        for line in lines
+            ]
+    print(temp_dists[0:2])
+    raise Exception()
+    # coord = line["coords"][0]
+    #
+    # print(coords[0])
+
+
+    dists = []
+    for line2 in lines:
+        dist = 0
+        for coord in line["coords"]:
+            dist += np.min(np.sum((coord - line2["coords"])**2, axis=1))
+
+        dists.append(dist / len(line["coords"]))
+
+    return dists
 
 
 def read_data(start, sim_id, time_offset):
@@ -49,8 +90,7 @@ def read_data(start, sim_id, time_offset):
     grouped_ds = list(date_ds.groupby("line_id"))
     for id, line in grouped_ds:
         lines.append({
-            "sim_id": sim_id,
-            "line_id": id,
+            "id": f"{sim_id}|{int(id)}",
             "coords": np.column_stack(
                 (line.latitude.values, line.longitude.values)
             )
@@ -59,14 +99,14 @@ def read_data(start, sim_id, time_offset):
     return lines
 
 
-def generate_network(centers, max_dist):
+def generate_network(lines, max_dist):
     '''
-    Generates a network given a list of centers and a max distance
-    required for two nodes to be linked
+    Generates a network given a list of lines and a max distance
+    required for two lines to be linked
 
     Parameters
     ----------
-    centers : a list of the centers to be individual nodes
+    lines : a list of the lines to be individual nodes
     max_dist : the maximum distance for two nodes to be linked
 
     Returns
@@ -74,19 +114,30 @@ def generate_network(centers, max_dist):
     [{ nodes, links }] : A list of nodes and links representing the network
     '''
 
-    coords = np.array([center["center"] for center in centers])
-
     nodes = []
     links = []
 
-    for i in range(len(centers)):
-        nodes.append({"id": centers[i]["id"]})
-        for j in range(i+1, len(centers)):
-            dist = np.sum((coords[i] - coords[j])**2)
-            if dist > max_dist:
+    for i, line in enumerate(lines):
+        nodes.append({"id": line["id"]})
+        dists = get_distances(line, lines)
+        for j, dist in enumerate(dists):
+            if i == j or dist > max_dist:
                 continue
 
-            links.append({"source": centers[i]["id"], "target": centers[j]["id"], "dist_sqrd": float(dist)})
+            links.append({
+                "source": line["id"],
+                "target": lines[j]["id"],
+                "dist_sqrd": dist
+            })
+
+    # for i in range(len(centers)):
+    #     nodes.append({"id": centers[i]["id"]})
+    #     for j in range(i+1, len(centers)):
+    #         dist = np.sum((coords[i] - coords[j])**2)
+    #         if dist > max_dist:
+    #             continue
+    #
+    #         links.append({"source": centers[i]["id"], "target": centers[j]["id"], "dist_sqrd": float(dist)})
 
     return {"nodes": nodes, "links": links}
 
@@ -96,11 +147,13 @@ if __name__ == "__main__":
     for i in range(50):
         lines += read_data("2024082712", i, 0)
 
-    centers = []
-    for line in lines:
-        centers.append({
-            "id": f"{line['sim_id']}|{int(line['line_id'])}",
-            "center": get_geometric_center(line["coords"])
-        })
+    get_distances(lines[0], lines)
 
-    print(generate_network(centers, 4000))
+    # centers = []
+    # for line in lines:
+    #     centers.append({
+    #         "id": f"{line['sim_id']}|{int(line['line_id'])}",
+    #         "center": get_geometric_center(line["coords"])
+    #     })
+
+    # print(generate_network(lines, 500))
