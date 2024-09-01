@@ -36,25 +36,10 @@ def get_distances(line, lines):
     a list of distances between one line and all others
     '''
 
-    # coords = [line["coords"] for line in lines]
-    temp_dists = [
-        cdist(lines[0]["coords"], line["coords"])
-        for line in lines
+    dists = [
+        np.mean(np.min(cdist(line["coords"], line2["coords"]), axis=1))
+        for line2 in lines
             ]
-    print(temp_dists[0:2])
-    raise Exception()
-    # coord = line["coords"][0]
-    #
-    # print(coords[0])
-
-
-    dists = []
-    for line2 in lines:
-        dist = 0
-        for coord in line["coords"]:
-            dist += np.min(np.sum((coord - line2["coords"])**2, axis=1))
-
-        dists.append(dist / len(line["coords"]))
 
     return dists
 
@@ -130,15 +115,6 @@ def generate_network(lines, max_dist):
                 "dist_sqrd": dist
             })
 
-    # for i in range(len(centers)):
-    #     nodes.append({"id": centers[i]["id"]})
-    #     for j in range(i+1, len(centers)):
-    #         dist = np.sum((coords[i] - coords[j])**2)
-    #         if dist > max_dist:
-    #             continue
-    #
-    #         links.append({"source": centers[i]["id"], "target": centers[j]["id"], "dist_sqrd": float(dist)})
-
     return {"nodes": nodes, "links": links}
 
 
@@ -147,8 +123,6 @@ if __name__ == "__main__":
     for i in range(50):
         lines += read_data("2024082712", i, 0)
 
-    get_distances(lines[0], lines)
-
     # centers = []
     # for line in lines:
     #     centers.append({
@@ -156,4 +130,4 @@ if __name__ == "__main__":
     #         "center": get_geometric_center(line["coords"])
     #     })
 
-    # print(generate_network(lines, 500))
+    generate_network(lines, 5)

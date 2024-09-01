@@ -66,5 +66,5 @@ async function populateGraph(simStart, timeOffset, distThreshold) {
 }
 
 
-populateGraph("2024082712", 0, 500)
+populateGraph("2024082712", 0, 5)
 
