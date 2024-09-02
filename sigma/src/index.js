@@ -16,11 +16,18 @@ const timeOffsetInput = document.getElementById("time-offset-input")
 const distThresholdInput = document.getElementById("dist-threshold-input")
 
 
-function updateGraph() { 
+async function updateGraph() { 
   sigmaInstance.graph.clear()
   layout.kill()
 
-  populateGraph("2024082712", timeOffsetInput.value, distThresholdInput.value)
+  const header = document.getElementById("graph-header")
+  header.style.color = "red"
+  header.innerText = "Generating network. Please wait..."
+
+  await populateGraph("2024082712", timeOffsetInput.value, distThresholdInput.value)
+
+  header.style.color = "black"
+  header.innerText = `Showing network for timestep ${timeOffsetInput.value} with distance threshold ${distThresholdInput.value}`
 
   sigmaInstance.refresh();
 }
