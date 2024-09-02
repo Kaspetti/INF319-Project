@@ -36,7 +36,7 @@ async function populateGraph(simStart, timeOffset, distThreshold) {
   const weights = links.map(l => distThreshold - l.dist_sqrd)
   const colorScale = scaleLinear()
     .domain([Math.min(...weights), Math.max(...weights)])
-    .range(["#ff0000", "#0000ff"])
+    .range(["#ff0000", "#00ff00"])
 
   nodes.forEach(n => {
     graph.addNode(n.id, {size: 4, color: "orange", label: n.id, x: Math.random(), y: Math.random()})
