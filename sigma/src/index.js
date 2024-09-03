@@ -9,7 +9,7 @@ import { rgb } from "d3-color"
 
 document.getElementById("show-graph-button").onclick = updateGraph
 
-const sigmaInstance = new Sigma(new Graph(), document.getElementById("container"));
+const sigmaInstance = new Sigma(new Graph(), document.getElementById("graph-container"));
 let layout = {}
 
 const timeOffsetInput = document.getElementById("time-offset-input")
