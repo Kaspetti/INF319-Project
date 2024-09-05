@@ -26,6 +26,7 @@ const timeOffsetInput = document.getElementById("time-offset-input")
 const distThresholdInput = document.getElementById("dist-threshold-input")
 
 let lines = []
+let selectedLine = null
 
 
 async function updateGraph() { 
@@ -86,8 +87,18 @@ async function populateGraph(simStart, timeOffset, distThreshold) {
   layout.start()
 
   sigmaInstance.on("downNode", function(e) {
-    let line = lines.find(l => l.options.id === e.node)
-    line.setStyle({ color: "red", weight: 5 })
+    if (selectedLine) {
+      selectedLine.setStyle({ color: "blue", weight: 1 })
+    }
+
+    lines.forEach(function(l) {
+      if (l.options.id === e.node) {
+        selectedLine = l
+        l.setStyle({ color: "red", weight: 5 })
+      } else {
+        l.setStyle({ color: "#9995", weight: 1})
+      }
+    })
   })
 }
 
@@ -108,7 +119,7 @@ async function populateMap(simStart, timeOffset) {
       latLons = l.coords.map(coord => [coord.lat, coord.lon])
     }
 
-    let line = L.polyline(latLons, { weight: 1, id: l.id }).addTo(lineLayer)
+    let line = L.polyline(latLons, { weight: 1, id: l.id, color: "blue" }).addTo(lineLayer)
     lines.push(line)
   })
 }
