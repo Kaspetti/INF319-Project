@@ -14,6 +14,10 @@ document.getElementById("show-graph-button").onclick = updateGraph
 const sigmaInstance = new Sigma(new Graph(), document.getElementById("graph-container"))
 
 const map = L.map("map-container").setView([0, 5], 2);
+L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 19,
+  attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+}).addTo(map);
 const lineLayer = L.layerGroup().addTo(map)
 
 let layout = {}
@@ -27,12 +31,14 @@ let lines = []
 async function updateGraph() { 
   sigmaInstance.graph.clear()
   layout.kill()
+  lineLayer.clearLayers();
 
   const header = document.getElementById("graph-header")
   header.style.color = "red"
   header.innerText = "Generating network. Please wait..."
 
   await populateGraph("2024082712", timeOffsetInput.value, distThresholdInput.value)
+  await populateMap("2024082712", timeOffsetInput.value)
 
   header.style.color = "black"
   header.innerText = `Showing network for timestep ${timeOffsetInput.value} with distance threshold ${distThresholdInput.value}`
@@ -87,11 +93,6 @@ async function populateGraph(simStart, timeOffset, distThreshold) {
 
 
 async function populateMap(simStart, timeOffset) {
-  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19,
-    attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-  }).addTo(map);
-
   const ls = await json(`http://localhost:8000/get-coords?sim_start=${simStart}&time_offset=${timeOffset}`) 
 
   lines = []
@@ -114,8 +115,8 @@ async function populateMap(simStart, timeOffset) {
 
 
 async function init(simStart, timeOffset, distThreshold) {
-  await populateMap(simStart, timeOffset)
   await populateGraph(simStart, timeOffset, distThreshold)
+  await populateMap(simStart, timeOffset)
 }
 
 
