@@ -6,18 +6,22 @@ import { json } from "d3-fetch"
 import { scaleLinear } from "d3-scale"
 import { rgb } from "d3-color"
 import L from "leaflet"
-import 'leaflet/dist/leaflet.css';
+import 'leaflet/dist/leaflet.css'
 
 
 document.getElementById("show-graph-button").onclick = updateGraph
 
 const sigmaInstance = new Sigma(new Graph(), document.getElementById("graph-container"))
+
 const map = L.map("map-container").setView([0, 5], 2);
+const lineLayer = L.layerGroup().addTo(map)
 
 let layout = {}
 
 const timeOffsetInput = document.getElementById("time-offset-input")
 const distThresholdInput = document.getElementById("dist-threshold-input")
+
+let lines = []
 
 
 async function updateGraph() { 
@@ -74,16 +78,47 @@ async function populateGraph(simStart, timeOffset, distThreshold) {
     settings: sensibleSettings
   });
   layout.start()
+
+  sigmaInstance.on("downNode", function(e) {
+    let line = lines.find(l => l.options.id === e.node)
+    line.setStyle({ color: "red", weight: 5 })
+  })
 }
 
 
-async function initMap() {
+async function populateMap(simStart, timeOffset) {
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
     attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
   }).addTo(map);
+
+  const ls = await json(`http://localhost:8000/get-coords?sim_start=${simStart}&time_offset=${timeOffset}`) 
+
+  lines = []
+  ls.forEach(function(l) {
+    const min = Math.min(...l.coords.map(coord => coord.lon))
+    const max = Math.max(...l.coords.map(coord => coord.lon))
+
+    let latLons
+    // If it crosses the anti meridian add 360 to the negative values
+    if (max - min > 180) {
+      latLons = l.coords.map(coord => [coord.lat, coord.lon < 0 ? coord.lat + 360 : coord.lon])
+    } else {
+      latLons = l.coords.map(coord => [coord.lat, coord.lon])
+    }
+
+    let line = L.polyline(latLons, { weight: 1, id: l.id }).addTo(lineLayer)
+    lines.push(line)
+  })
 }
 
 
-populateGraph("2024082712", 0, 5)
-initMap()
+async function init(simStart, timeOffset, distThreshold) {
+  await populateMap(simStart, timeOffset)
+  await populateGraph(simStart, timeOffset, distThreshold)
+}
+
+
+init("2024082712", 0, 5)
+
+

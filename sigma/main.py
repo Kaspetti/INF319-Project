@@ -41,7 +41,7 @@ def get_network(sim_start: str = "2024082712",
                 dist_threshold: int = 500):
     lines = []
     for i in range(50):
-        lines.extend(read_data(sim_start, i, time_offset))
+        lines += read_data(sim_start, i, time_offset)
 
     return generate_network(lines, dist_threshold)
 
