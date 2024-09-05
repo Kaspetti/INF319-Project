@@ -27,6 +27,7 @@ const distThresholdInput = document.getElementById("dist-threshold-input")
 
 let lines = []
 let selectedLine = null
+let selectedNode = null
 
 
 async function updateGraph() { 
@@ -87,9 +88,15 @@ async function populateGraph(simStart, timeOffset, distThreshold) {
   layout.start()
 
   sigmaInstance.on("downNode", function(e) {
-    if (selectedLine) {
-      selectedLine.setStyle({ color: "blue", weight: 1 })
-    }
+    if (selectedNode) {
+      sigmaInstance.graph.setNodeAttribute(selectedNode, "color", "orange")
+      sigmaInstance.graph.setNodeAttribute(selectedNode, "size", 4)
+    } 
+
+    selectedNode = e.node
+    sigmaInstance.graph.setNodeAttribute(selectedNode, "color", "red")
+    sigmaInstance.graph.setNodeAttribute(selectedNode, "size", 8)
+    sigmaInstance.refresh()
 
     lines.forEach(function(l) {
       if (l.options.id === e.node) {
@@ -98,6 +105,16 @@ async function populateGraph(simStart, timeOffset, distThreshold) {
       } else {
         l.setStyle({ color: "#9995", weight: 1})
       }
+    })
+  })
+
+  sigmaInstance.on("downStage", function(e) {
+    sigmaInstance.graph.setNodeAttribute(selectedNode, "color", "orange")
+    sigmaInstance.graph.setNodeAttribute(selectedNode, "size", 4)
+    sigmaInstance.refresh()
+
+    lines.forEach(function(l) {
+      l.setStyle({ color: "blue", weight: 1 })
     })
   })
 }
