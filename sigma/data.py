@@ -19,6 +19,7 @@ def get_geometric_center(cs):
     return [np.sum(cs[:, 0]) / len(cs), np.sum(cs[:, 1]) / len(cs)]
 
 
+# TODO: Change to 3D coordinates
 def get_distances(line, lines):
     '''
     Gets the distances from one line to all other lines.
