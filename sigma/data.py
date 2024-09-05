@@ -1,6 +1,29 @@
 import xarray as xr
 import numpy as np
 from scipy.spatial.distance import cdist
+import math
+
+
+def to_xyz(v):
+    '''
+    Converts a [lat, lon] coordinate into 3D coordinates ([x, y ,z]) on the
+    unit sphere
+
+    Parameters
+    ----------
+    v : the [lat, lon] coordinate to convert
+
+    Returns
+    -------
+    [x, y, z] : the coordinate represented as [x, y, z] coordinates
+    on the unit sphere
+    '''
+
+    x = math.cos(math.radians(v[0])) * math.cos(math.radians(v[1]))
+    y = math.cos(math.radians(v[0])) * math.sin(math.radians(v[1]))
+    z = math.sin(math.radians(v[0]))
+
+    return [x, y, z]
 
 
 def get_geometric_center(cs):
