@@ -26,22 +26,6 @@ def to_xyz(v):
     return [x, y, z]
 
 
-def get_geometric_center(cs):
-    '''
-    Gets the geometric center of the line
-
-    Parameters
-    ----------
-    cs : the coordinates making up the line [[lat, lon]...]
-
-    Returns
-    -------
-    [lat, lon] : the geometric center of the line
-    '''
-
-    return [np.sum(cs[:, 0]) / len(cs), np.sum(cs[:, 1]) / len(cs)]
-
-
 # TODO: Change to 3D coordinates
 def get_distances(line, lines):
     '''
