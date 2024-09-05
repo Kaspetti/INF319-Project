@@ -1,15 +1,19 @@
 import Sigma from "sigma"
 import Graph from "graphology"
-import FA2Layout from 'graphology-layout-forceatlas2/worker';
-import { inferSettings } from "graphology-layout-forceatlas2";
+import FA2Layout from 'graphology-layout-forceatlas2/worker'
+import { inferSettings } from "graphology-layout-forceatlas2"
 import { json } from "d3-fetch"
 import { scaleLinear } from "d3-scale"
 import { rgb } from "d3-color"
+import L from "leaflet"
+import 'leaflet/dist/leaflet.css';
 
 
 document.getElementById("show-graph-button").onclick = updateGraph
 
-const sigmaInstance = new Sigma(new Graph(), document.getElementById("graph-container"));
+const sigmaInstance = new Sigma(new Graph(), document.getElementById("graph-container"))
+const map = L.map("map-container").setView([0, 5], 2);
+
 let layout = {}
 
 const timeOffsetInput = document.getElementById("time-offset-input")
@@ -29,7 +33,7 @@ async function updateGraph() {
   header.style.color = "black"
   header.innerText = `Showing network for timestep ${timeOffsetInput.value} with distance threshold ${distThresholdInput.value}`
 
-  sigmaInstance.refresh();
+  sigmaInstance.refresh()
 }
 
 
@@ -64,7 +68,7 @@ async function populateGraph(simStart, timeOffset, distThreshold) {
   
 
 
-  const sensibleSettings = inferSettings(graph);
+  const sensibleSettings = inferSettings(graph)
   sensibleSettings.edgeWeightInfluence = 0.5
   layout = new FA2Layout(graph, {
     settings: sensibleSettings
@@ -73,5 +77,13 @@ async function populateGraph(simStart, timeOffset, distThreshold) {
 }
 
 
-populateGraph("2024082712", 0, 5)
+async function initMap() {
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+  }).addTo(map);
+}
 
+
+populateGraph("2024082712", 0, 5)
+initMap()
