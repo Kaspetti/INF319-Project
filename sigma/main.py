@@ -38,7 +38,7 @@ class Network(BaseModel):
 @app.get("/get-networks", response_model=Network)
 def get_network(sim_start: str = "2024082712",
                 time_offset: int = 0,
-                dist_threshold: int = 500):
+                dist_threshold: float = 0.1):
     lines = []
     for i in range(50):
         lines += read_data(sim_start, i, time_offset)

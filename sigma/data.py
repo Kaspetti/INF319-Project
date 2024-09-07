@@ -44,8 +44,10 @@ def get_distances(line, lines):
     a list of distances between one line and all others
     '''
 
+    coords = [to_xyz(coord) for coord in line["coords"]]
+
     dists = [
-        np.mean(np.min(cdist(line["coords"], line2["coords"]), axis=1))
+        np.mean(np.min(cdist(coords, [to_xyz(coord) for coord in line2["coords"]]), axis=1))
         for line2 in lines
             ]
 
