@@ -9,18 +9,18 @@ import L from "leaflet"
 import 'leaflet/dist/leaflet.css'
 
 
-document.getElementById("show-graph-button").onclick = updateGraph
+document.getElementById("show-graph-button").onclick = updateView
 
 const sigmaInstance = new Sigma(new Graph(), document.getElementById("graph-container"))
 
 const map = L.map("map-container").setView([0, 5], 2);
-L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png', {
   maxZoom: 19,
   attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
 }).addTo(map);
 const lineLayer = L.layerGroup().addTo(map)
 
-let layout = {}
+let layout = new FA2Layout(sigmaInstance.graph)
 
 const timeOffsetInput = document.getElementById("time-offset-input")
 const distThresholdInput = document.getElementById("dist-threshold-input")
@@ -30,9 +30,9 @@ let selectedLine = null
 let selectedNode = null
 
 
-async function updateGraph() { 
+async function updateView() { 
   sigmaInstance.graph.clear()
-  layout.kill()
+  // layout.stop()
   lineLayer.clearLayers();
 
   const header = document.getElementById("graph-header")
@@ -50,6 +50,7 @@ async function updateGraph() {
 
 
 async function populateGraph(simStart, timeOffset, distThreshold) {
+  selectedNode = null
   const graph = sigmaInstance.graph;
 
   const data = await json(`http://localhost:8000/get-networks?sim_start=${simStart}&time_offset=${timeOffset}&dist_threshold=${distThreshold}`) 
@@ -82,9 +83,8 @@ async function populateGraph(simStart, timeOffset, distThreshold) {
 
   const sensibleSettings = inferSettings(graph)
   sensibleSettings.edgeWeightInfluence = 0.5
-  layout = new FA2Layout(graph, {
-    settings: sensibleSettings
-  });
+  sensibleSettings.gravity = 0.75
+  layout.settings = sensibleSettings
   layout.start()
 
   sigmaInstance.on("downNode", function(e) {
@@ -121,6 +121,7 @@ async function populateGraph(simStart, timeOffset, distThreshold) {
 
 
 async function populateMap(simStart, timeOffset) {
+  selectedLine = null
   const ls = await json(`http://localhost:8000/get-coords?sim_start=${simStart}&time_offset=${timeOffset}`) 
 
   lines = []
@@ -131,7 +132,7 @@ async function populateMap(simStart, timeOffset) {
     let latLons
     // If it crosses the anti meridian add 360 to the negative values
     if (max - min > 180) {
-      latLons = l.coords.map(coord => [coord.lat, coord.lon < 0 ? coord.lat + 360 : coord.lon])
+      latLons = l.coords.map(coord => [coord.lat, coord.lon < 0 ? coord.lon + 360 : coord.lon])
     } else {
       latLons = l.coords.map(coord => [coord.lat, coord.lon])
     }
@@ -142,12 +143,12 @@ async function populateMap(simStart, timeOffset) {
 }
 
 
-async function init(simStart, timeOffset, distThreshold) {
-  await populateGraph(simStart, timeOffset, distThreshold)
-  await populateMap(simStart, timeOffset)
+async function init() {
+  await updateView()
+  // await populateMap(simStart, timeOffset)
 }
 
 
-init("2024082712", 0, 5)
+init()
 
 
