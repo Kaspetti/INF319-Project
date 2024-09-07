@@ -3,8 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <title>INF319</title>
+
+    <link rel="stylesheet" href="styles.css">
   </head>
-  <body style="background: lightgrey">
+  <body>
     <label for="time-offset-input">Time Offset</label>
     <input type="number" id="time-offset-input" name="time-offset-input" value="0">
     <br>
@@ -15,9 +17,9 @@
 
     <h1 id="graph-header">Showing network for timestep 0 with distance threshold 0.1</h1>
 
-    <div id="container-container" style="display: flex;">
-      <div id="graph-container" style="width: 50vw; height: 80vh; background: white"></div>
-      <div id="map-container" style="width:50vw; height: 80vh; background: white"></div>
+    <div id="container-container">
+      <div id="graph-container" class="vis-container"></div>
+      <div id="map-container" class="vis-container"></div>
     </div>
     <script src="dist/main.js"></script>
   </body>

@@ -1,0 +1,15 @@
+body {
+  background-color: #d4dadc;
+}
+
+
+#container-container {
+  display: flex;
+}
+
+
+.vis-container {
+  width: 50vw;
+  height: 80vh;
+  background-color: #d4dadc;
+}
