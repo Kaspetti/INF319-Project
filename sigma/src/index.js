@@ -93,6 +93,8 @@ async function populateGraph(simStart, timeOffset, distThreshold) {
       sigmaInstance.graph.setNodeAttribute(selectedNode, "size", 4)
     } 
 
+    console.log(graph.degree(e.node))
+
     selectedNode = e.node
     sigmaInstance.graph.setNodeAttribute(selectedNode, "color", "red")
     sigmaInstance.graph.setNodeAttribute(selectedNode, "size", 8)
@@ -133,6 +135,7 @@ async function populateMap(simStart, timeOffset) {
     // If it crosses the anti meridian add 360 to the negative values
     if (max - min > 180) {
       latLons = l.coords.map(coord => [coord.lat, coord.lon < 0 ? coord.lon + 360 : coord.lon])
+      
     } else {
       latLons = l.coords.map(coord => [coord.lat, coord.lon])
     }
@@ -145,10 +148,8 @@ async function populateMap(simStart, timeOffset) {
 
 async function init() {
   await updateView()
-  // await populateMap(simStart, timeOffset)
 }
 
 
 init()
-
 
