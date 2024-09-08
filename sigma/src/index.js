@@ -10,6 +10,8 @@ import 'leaflet/dist/leaflet.css'
 
 
 document.getElementById("show-graph-button").onclick = updateView
+document.getElementById("id-search-button").onclick = highlightId
+document.getElementById("clear-search-button").onclick = clearHighlight
 
 const sigmaInstance = new Sigma(new Graph(), document.getElementById("graph-container"))
 
@@ -24,10 +26,12 @@ map.on("click", function() {
     l.setStyle({color: "blue", weight: 1})
   })
 
-  if (selectedNode) {
-    sigmaInstance.graph.setNodeAttribute(selectedNode, "color", "orange")
-    sigmaInstance.graph.setNodeAttribute(selectedNode, "size", 4)
-  }
+  sigmaInstance.graph.nodes().forEach(function(n) {
+    sigmaInstance.graph.setNodeAttribute(n, "color", "orange")
+    sigmaInstance.graph.setNodeAttribute(n, "size", 4)
+  })
+  sigmaInstance.refresh()
+
   selectedNode = null
   selectedLine = null
 })
@@ -101,11 +105,11 @@ async function populateGraph(simStart, timeOffset, distThreshold) {
   sigmaInstance.on("downNode", e => setFocus(e.node))
 
   sigmaInstance.on("downStage", function() {
-    if (selectedNode) {
-      sigmaInstance.graph.setNodeAttribute(selectedNode, "color", "orange")
-      sigmaInstance.graph.setNodeAttribute(selectedNode, "size", 4)
-      sigmaInstance.refresh()
-    }
+    sigmaInstance.graph.nodes().forEach(function(n) {
+      sigmaInstance.graph.setNodeAttribute(n, "color", "orange")
+      sigmaInstance.graph.setNodeAttribute(n, "size", 4)
+    })
+    sigmaInstance.refresh()
 
     lines.forEach(function(l) {
       l.setStyle({ color: "blue", weight: 1 })
@@ -151,6 +155,8 @@ async function populateMap(simStart, timeOffset) {
 
 
 function setFocus(id) {
+  clearHighlight()
+
   lines.forEach(function(l) {
     if (l.options.id === id) {
       selectedLine = l
@@ -174,6 +180,42 @@ function setFocus(id) {
 
 async function init() {
   await updateView()
+}
+
+
+function highlightId() {
+  const id = document.getElementById("id-search-input").value
+  clearHighlight()
+  if (!id) {
+    return
+  }
+
+  sigmaInstance.graph.nodes().filter(n => n.split("|")[1] === id).forEach(function(n) {
+    sigmaInstance.graph.setNodeAttribute(n, "color", "red")
+    sigmaInstance.graph.setNodeAttribute(n, "size", 8)
+  })
+
+  lines.forEach(function(l) {
+    if (l.options.id.split("|")[1] === id) {
+      l.setStyle({ color: "red", weight: 5 })
+    } else {
+      l.setStyle({ color: "#9995", weight: 1})
+    }
+  })
+}
+
+
+function clearHighlight() {
+  sigmaInstance.graph.nodes().forEach(function(n) {
+    sigmaInstance.graph.setNodeAttribute(n, "color", "orange")
+    sigmaInstance.graph.setNodeAttribute(n, "size", 4)
+  })
+
+  lines.forEach(function(l) {
+    l.setStyle({ color: "blue", weight: 1 })
+  })
+
+  document.getElementById("id-search-input").value = ""
 }
 
 
