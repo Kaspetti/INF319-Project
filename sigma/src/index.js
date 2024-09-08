@@ -58,7 +58,7 @@ async function updateView() {
   await populateMap("2024082712", timeOffsetInput.value)
 
   header.style.color = "black"
-  header.innerText = `Showing network for timestep ${timeOffsetInput.value} with distance threshold ${distThresholdInput.value}`
+  header.innerText = `Showing network for timestep ${timeOffsetInput.value} with distance threshold ${distThresholdInput.value}km`
 
   sigmaInstance.refresh()
 }

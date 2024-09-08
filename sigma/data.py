@@ -111,12 +111,14 @@ def generate_network(lines, max_dist):
 
     nodes = []
     links = []
+    earth_radius = 6371
 
     for i, line in enumerate(lines):
         nodes.append({"id": line["id"]})
         dists = get_distances(line, lines)
 
-        ratios = [np.sum(dist <= max_dist) / len(dist) for dist in dists]
+        ratios = [np.sum(dist <= max_dist / earth_radius) / len(dist)
+                  for dist in dists]
 
         for j, ratio in enumerate(ratios):
             if i == j or ratio == 0:
