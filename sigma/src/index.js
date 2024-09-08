@@ -19,6 +19,18 @@ L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png', 
   attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
 }).addTo(map);
 const lineLayer = L.layerGroup().addTo(map)
+map.on("click", function() {
+  lines.forEach(function(l) {
+    l.setStyle({color: "blue", weight: 1})
+  })
+
+  if (selectedNode) {
+    sigmaInstance.graph.setNodeAttribute(selectedNode, "color", "orange")
+    sigmaInstance.graph.setNodeAttribute(selectedNode, "size", 4)
+  }
+  selectedNode = null
+  selectedLine = null
+})
 
 let layout = new FA2Layout(sigmaInstance.graph)
 
@@ -32,7 +44,6 @@ let selectedNode = null
 
 async function updateView() { 
   sigmaInstance.graph.clear()
-  // layout.stop()
   lineLayer.clearLayers();
 
   const header = document.getElementById("graph-header")
@@ -87,30 +98,9 @@ async function populateGraph(simStart, timeOffset, distThreshold) {
   layout.settings = sensibleSettings
   layout.start()
 
-  sigmaInstance.on("downNode", function(e) {
-    if (selectedNode) {
-      sigmaInstance.graph.setNodeAttribute(selectedNode, "color", "orange")
-      sigmaInstance.graph.setNodeAttribute(selectedNode, "size", 4)
-    } 
+  sigmaInstance.on("downNode", e => setFocus(e.node))
 
-    console.log(graph.degree(e.node))
-
-    selectedNode = e.node
-    sigmaInstance.graph.setNodeAttribute(selectedNode, "color", "red")
-    sigmaInstance.graph.setNodeAttribute(selectedNode, "size", 8)
-    sigmaInstance.refresh()
-
-    lines.forEach(function(l) {
-      if (l.options.id === e.node) {
-        selectedLine = l
-        l.setStyle({ color: "red", weight: 5 })
-      } else {
-        l.setStyle({ color: "#9995", weight: 1})
-      }
-    })
-  })
-
-  sigmaInstance.on("downStage", function(e) {
+  sigmaInstance.on("downStage", function() {
     sigmaInstance.graph.setNodeAttribute(selectedNode, "color", "orange")
     sigmaInstance.graph.setNodeAttribute(selectedNode, "size", 4)
     sigmaInstance.refresh()
@@ -118,6 +108,9 @@ async function populateGraph(simStart, timeOffset, distThreshold) {
     lines.forEach(function(l) {
       l.setStyle({ color: "blue", weight: 1 })
     })
+
+    selectedNode = null
+    selectedLine = null
   })
 }
 
@@ -140,9 +133,40 @@ async function populateMap(simStart, timeOffset) {
       latLons = l.coords.map(coord => [coord.lat, coord.lon])
     }
 
-    let line = L.polyline(latLons, { weight: 1, id: l.id, color: "blue" }).addTo(lineLayer)
+    let line = L.polyline(latLons, 
+      { 
+        weight: 1,
+        id: l.id,
+        color: "blue",
+        bubblingMouseEvents: false
+      }).addTo(lineLayer)
+
+    line.on("click", e => setFocus(e.target.options.id))
+
     lines.push(line)
   })
+}
+
+
+function setFocus(id) {
+  lines.forEach(function(l) {
+    if (l.options.id === id) {
+      selectedLine = l
+      l.setStyle({ color: "red", weight: 5 })
+    } else {
+      l.setStyle({ color: "#9995", weight: 1})
+    }
+  })
+
+  if (selectedNode) {
+    sigmaInstance.graph.setNodeAttribute(selectedNode, "color", "orange")
+    sigmaInstance.graph.setNodeAttribute(selectedNode, "size", 4)
+  } 
+
+  selectedNode = id
+  sigmaInstance.graph.setNodeAttribute(selectedNode, "color", "red")
+  sigmaInstance.graph.setNodeAttribute(selectedNode, "size", 8)
+  sigmaInstance.refresh()
 }
 
 
