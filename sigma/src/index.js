@@ -72,7 +72,7 @@ async function populateGraph(simStart, timeOffset, distThreshold) {
   const links = data.links.map(d => ({...d}))
   const nodes = data.nodes.map(d => ({...d}))
 
-  const weights = links.map(l => distThreshold - l.dist_sqrd)
+  const weights = links.map(l => l.weight)
   const colorScale = scaleLinear()
     .domain([Math.min(...weights), Math.max(...weights)])
     .range(["#ff0000", "#0000ff"])
@@ -82,23 +82,22 @@ async function populateGraph(simStart, timeOffset, distThreshold) {
   })
 
   links.forEach(l => {
-    const weight = distThreshold - l.dist_sqrd
-    const color = rgb(colorScale(weight)).formatHex()
+    const color = rgb(colorScale(l.weight)).formatHex()
 
     graph.addEdge(l.source, l.target, {
       type: "line",
-      label: l.dist_sqrd,
+      label: l.weight,
       size: 1,
       color: color,
-      weight: weight
+      weight: l.weight
     })
   })
   
 
 
   const sensibleSettings = inferSettings(graph)
-  sensibleSettings.edgeWeightInfluence = 0.5
-  sensibleSettings.gravity = 0.75
+  sensibleSettings.edgeWeightInfluence = 1
+  sensibleSettings.gravity = 1
   layout.settings = sensibleSettings
   layout.start()
 

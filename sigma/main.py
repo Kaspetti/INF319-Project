@@ -27,7 +27,7 @@ class Node(BaseModel):
 class Link(BaseModel):
     source: str
     target: str
-    dist_sqrd: float
+    weight: float
 
 
 class Network(BaseModel):

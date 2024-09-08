@@ -47,8 +47,8 @@ def get_distances(line, lines):
     coords = [to_xyz(coord) for coord in line["coords"]]
 
     dists = [
-        np.mean(np.min(cdist(coords, [to_xyz(coord) for coord in line2["coords"]]), axis=1))
-        for line2 in lines
+        np.min(cdist(coords, [to_xyz(coord) for coord in line2["coords"]]), axis=1)
+    for line2 in lines
             ]
 
     return dists
@@ -115,14 +115,17 @@ def generate_network(lines, max_dist):
     for i, line in enumerate(lines):
         nodes.append({"id": line["id"]})
         dists = get_distances(line, lines)
-        for j, dist in enumerate(dists):
-            if i == j or dist > max_dist:
+
+        ratios = [np.sum(dist <= max_dist) / len(dist) for dist in dists]
+
+        for j, ratio in enumerate(ratios):
+            if i == j or ratio == 0:
                 continue
 
             links.append({
                 "source": line["id"],
                 "target": lines[j]["id"],
-                "dist_sqrd": dist
+                "weight": ratio
             })
 
     return {"nodes": nodes, "links": links}
