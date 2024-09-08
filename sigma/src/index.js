@@ -101,9 +101,11 @@ async function populateGraph(simStart, timeOffset, distThreshold) {
   sigmaInstance.on("downNode", e => setFocus(e.node))
 
   sigmaInstance.on("downStage", function() {
-    sigmaInstance.graph.setNodeAttribute(selectedNode, "color", "orange")
-    sigmaInstance.graph.setNodeAttribute(selectedNode, "size", 4)
-    sigmaInstance.refresh()
+    if (selectedNode) {
+      sigmaInstance.graph.setNodeAttribute(selectedNode, "color", "orange")
+      sigmaInstance.graph.setNodeAttribute(selectedNode, "size", 4)
+      sigmaInstance.refresh()
+    }
 
     lines.forEach(function(l) {
       l.setStyle({ color: "blue", weight: 1 })
