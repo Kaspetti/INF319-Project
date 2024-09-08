@@ -12,4 +12,5 @@ body {
   width: 50vw;
   height: 80vh;
   background-color: #d4dadc;
+  border: 2px black solid;
 }
