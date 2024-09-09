@@ -23,7 +23,7 @@ L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png', 
 const lineLayer = L.layerGroup().addTo(map)
 map.on("click", function() {
   lines.forEach(function(l) {
-    l.setStyle({color: "blue", weight: 1})
+    l.setStyle({color: "blue", weight: 2})
   })
 
   sigmaInstance.graph.nodes().forEach(function(n) {
@@ -140,7 +140,7 @@ async function populateMap(simStart, timeOffset) {
 
     let line = L.polyline(latLons, 
       { 
-        weight: 1,
+        weight: 2,
         id: l.id,
         color: "blue",
         bubblingMouseEvents: false
