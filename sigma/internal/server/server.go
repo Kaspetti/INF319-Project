@@ -29,7 +29,7 @@ func getAllLines(ctx *gin.Context) {
 
     if simStartQuery, ok := ctx.GetQuery("sim-start"); !ok {
         ctx.JSON(http.StatusBadRequest, gin.H{
-            "message": "simStart parameter missing",
+            "message": "sim-start parameter missing",
         })
         return
     } else {
