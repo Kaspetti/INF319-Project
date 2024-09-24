@@ -5,18 +5,9 @@ import (
 	"errors"
 	"fmt"
 
+	. "github.com/Kaspetti/INF319-Project/internal/geo"
 	"github.com/batchatco/go-native-netcdf/netcdf"
 )
-
-type Line struct {
-	Id     string   `json:"id"`
-	Coords []Coord `json:"coords"`
-}
-
-type Coord struct {
-	Latitude  float64 `json:"lat"`
-	Longitude float64 `json:"lon"`
-}
 
 // GetAllLines gets all lines of a given date from all ensemble members.
 // Dates range from 0-240 and is hours since simulation start.
@@ -86,36 +77,22 @@ func getLines(dataFolder string, ensId int64, time int64) ([]Line, error) {
 				lines = append(lines,
 					Line{
 						Id:     fmt.Sprintf("%d|%d", ensId, id),
-						Coords: make([]Coord, 0),
+						Coords: make([]CoordGeo, 0),
 					},
 				)
 			}
 
-			lines[id-1].Coords = append(lines[id-1].Coords, Coord{lats[i], lons[i]})
+			lines[id-1].Coords = append(
+                lines[id-1].Coords,
+                CoordGeo {
+                    Latitude: lats[i],
+                    Longitude: lons[i],
+                },
+            )
 		} else if dates[i] > time {
 			break
 		}
 	}
 
 	return lines, nil
-}
-
-func (l Line) GetLatitudes() []float64 {
-	lats := make([]float64, len(l.Coords))
-
-	for i, c := range l.Coords {
-		lats[i] = c.Latitude
-	}
-
-	return lats
-}
-
-func (l Line) GetLongitudes() []float64 {
-	lons := make([]float64, len(l.Coords))
-
-	for i, c := range l.Coords {
-		lons[i] = c.Longitude
-	}
-
-	return lons
 }
