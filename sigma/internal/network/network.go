@@ -2,6 +2,8 @@ package network
 
 import (
     . "github.com/Kaspetti/INF319-Project/internal/geo"
+
+    "sync"
 )
 
 
@@ -23,5 +25,26 @@ func getDistances(line1, line2 Line) []float64 {
         dists = append(dists, minDist)
     }
 
+    return dists
+}
+
+
+// getAllDistances gets the distances from one line to all others.
+// The result is a 2D array where each row contains the distances from
+// all coordinates in line1 to another line.
+func getAllDistances(line1 Line, lines []Line) [][]float64 {
+    dists := make([][]float64, len(lines))
+    var wg sync.WaitGroup
+
+    for i, line2 := range lines {
+        wg.Add(1)    
+        go func(i int, line2 Line) {
+            defer wg.Done()
+            line2Dists := getDistances(line1, line2)
+            dists[i] = line2Dists
+        }(i, line2)
+    }
+
+    wg.Wait()
     return dists
 }

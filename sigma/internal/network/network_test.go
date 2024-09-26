@@ -80,6 +80,22 @@ func BenchmarkDistancesTwoLines(b *testing.B) {
 }
 
 
+func BenchmarkDistancesAllLines(b *testing.B) {
+    lines, err := netcdf.GetAllLines("2024082712", 0)
+    if err != nil {
+        b.Fatalf("Error occurred when reading lines for benchmark: %v", err) 
+    }
+
+    for i := 0; i < b.N; i++ {
+        b.StopTimer()
+        b.StartTimer()
+        for _, line := range lines {
+            getAllDistances(line, lines)
+        }
+    }
+}
+
+
 func arrayApproxEquals(a1, a2 []float64, threshold float64) bool {
     if len(a1) != len(a2) {
         return false
