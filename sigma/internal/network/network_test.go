@@ -67,7 +67,7 @@ func TestDistancesTwoLines(t *testing.T) {
 }
 
 func BenchmarkDistancesTwoLines(b *testing.B) {
-    lines, err := netcdf.GetAllLines("2024082712", 0)
+    lines, err := netcdf.GetAllLines("2024082712", 0, true)
     if err != nil {
         b.Fatalf("Error occurred when reading lines for benchmark: %v", err) 
     }
@@ -81,7 +81,7 @@ func BenchmarkDistancesTwoLines(b *testing.B) {
 
 
 func BenchmarkDistancesAllLines(b *testing.B) {
-    lines, err := netcdf.GetAllLines("2024082712", 0)
+    lines, err := netcdf.GetAllLines("2024082712", 0, true)
     if err != nil {
         b.Fatalf("Error occurred when reading lines for benchmark: %v", err) 
     }

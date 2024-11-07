@@ -11,10 +11,14 @@ import (
 
 // GetAllLines gets all lines of a given date from all ensemble members.
 // Dates range from 0-240 and is hours since simulation start.
+<<<<<<< HEAD
 func GetAllLines(dataFolder string, time int64, ) ([]Line, error) {
+=======
+func GetAllLines(dataFolder string, time int64, test bool) ([]Line, error) {
+>>>>>>> b77dcc5837fe5b2627c02372c7bf9f4f9d92532f
 	allLines := make([]Line, 0)
 	for i := 0; i < 50; i++ {
-		lines, err := getLines(dataFolder, int64(i), time)
+		lines, err := getLines(dataFolder, int64(i), time, test)
 		if err != nil {
 			return nil, err
 		}
@@ -25,9 +29,13 @@ func GetAllLines(dataFolder string, time int64, ) ([]Line, error) {
 	return allLines, nil
 }
 
-func getLines(dataFolder string, ensId int64, time int64) ([]Line, error) {
+func getLines(dataFolder string, ensId int64, time int64, test bool) ([]Line, error) {
 	// Opens the netCDF file of the ensamble member of id 'ensId'
-	nc, err := netcdf.Open(fmt.Sprintf("./%s/ec.ens_%02d.%s.sfc.mta.nc", dataFolder, ensId, dataFolder))
+    rootFolder := "."
+    if test {
+        rootFolder = "../.."
+    }
+	nc, err := netcdf.Open(fmt.Sprintf("%s/%s/ec.ens_%02d.%s.sfc.mta.nc", rootFolder, dataFolder, ensId, dataFolder))
 	if err != nil {
 		return nil, err
 	}

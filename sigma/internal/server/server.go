@@ -46,7 +46,7 @@ func getAllLines(ctx *gin.Context) {
 		}
 	}
 
-	lines, err := netcdf.GetAllLines(simStart, timeOffset)
+	lines, err := netcdf.GetAllLines(simStart, timeOffset, false)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{
             "message": fmt.Sprintf("error getting lines for date %s", simStart),

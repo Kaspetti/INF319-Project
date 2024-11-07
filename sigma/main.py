@@ -4,6 +4,8 @@ from pydantic import BaseModel
 from data import read_data, generate_network
 from line_reader import get_all_lines
 
+from multiscale import multiscale
+
 
 app = FastAPI()
 
@@ -42,8 +44,9 @@ def get_network(sim_start: str = "2024101900",
                 dist_threshold: float = 0.1):
 
     lines = get_all_lines(sim_start, time_offset, "jet")
+    ico_points_ms, line_points_ms = multiscale(lines, 2)
 
-    return generate_network(lines, dist_threshold)
+    return generate_network(lines, ico_points_ms, line_points_ms, dist_threshold)
 
 
 @app.get("/get-coords")

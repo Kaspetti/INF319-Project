@@ -142,11 +142,11 @@ def read_data(start, sim_id, time_offset):
     return lines
 
 
-def get_close_lines(line: Line, lines: List[Line], ico_points_ms, line_points_ms, threshold: float | int) -> Set[str]:
+def get_close_lines(line: Line, lines: List[Line], ico_points_ms, line_points_ms, threshold: float | int) -> List[Line]:
     line_coords_ms_0_idx = line_points_ms[line.id][0]
     line_coords_ms_0 = [line.coords[coord[0]].to_3D().to_ndarray() for coord in line_coords_ms_0_idx.values()]
 
-    close_lines = set()
+    close_lines = []
 
     for line_2 in lines:
         if line_2.id == line.id:
@@ -157,7 +157,7 @@ def get_close_lines(line: Line, lines: List[Line], ico_points_ms, line_points_ms
         dists = np.min(cdist(line_coords_ms_0, line_2_coords_ms_0), axis=1) * EARTH_RADIUS
         
         if np.any(dists < threshold):
-            close_lines.add(line_2.id)
+            close_lines.append(line_2)
 
     return close_lines
 
@@ -177,13 +177,35 @@ def generate_network(lines: List[Line], ico_points_ms, line_points_ms, max_dist:
     [{ nodes, links }] : A list of nodes and links representing the network
     '''
 
-    nodes = set()
+    nodes = []
     links = []
 
     bar = alive_it(lines, title="Generating network")
+    i = 0
     for line in bar:
-        nodes.add(line.id)
+        nodes.append(line.id)
         close_lines = get_close_lines(line, lines, ico_points_ms, line_points_ms, 50)
+        dists = get_distances(line, close_lines, max_dist)
+
+        ratios = []
+        for dist in dists:
+            if len(dist) == 0:
+                ratios.append(0)
+                continue
+            ratios.append(np.sum(dist <= max_dist / EARTH_RADIUS) / len(dist))
+
+        for j, ratio in enumerate(ratios):
+            if i == j or ratio == 0:
+                continue
+
+            links.append({
+                "source": line.id,
+                "target": lines[j].id,
+                "weight": ratio
+            })
+        i += 1
+
+    return {"nodes": nodes, "links": links}
 
     # nodes = []
     # links = []
