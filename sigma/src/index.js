@@ -54,8 +54,8 @@ async function updateView() {
   header.style.color = "red"
   header.innerText = "Generating network. Please wait..."
 
-  await populateGraph("2024082712", timeOffsetInput.value, distThresholdInput.value)
-  await populateMap("2024082712", timeOffsetInput.value)
+  await populateGraph("2024101900", timeOffsetInput.value, distThresholdInput.value)
+  await populateMap("2024101900", timeOffsetInput.value)
 
   header.style.color = "black"
   header.innerText = `Showing network for timestep ${timeOffsetInput.value} with distance threshold ${distThresholdInput.value}km`

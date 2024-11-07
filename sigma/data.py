@@ -1,7 +1,16 @@
+import math
+from typing import List, Set
+
+from line_reader import get_all_lines, Line
+from multiscale import multiscale
+
 import xarray as xr
 import numpy as np
 from scipy.spatial.distance import cdist
-import math
+from alive_progress import alive_it
+
+
+EARTH_RADIUS = 6371
 
 
 def to_xyz(v):
@@ -26,8 +35,31 @@ def to_xyz(v):
     return [x, y, z]
 
 
-# TODO: Change to 3D coordinates
-def get_distances(line, lines):
+def distance(c1, c2):
+    return math.sqrt(
+        math.pow(c1.x - c2.x, 2) +
+        math.pow(c1.y - c2.y, 2) +
+        math.pow(c1.z - c2.z, 2)
+    )
+
+
+def nearby_check(coords1, coords2, max_dist):
+    c1_start = coords1[0]
+    c2_start = coords2[0]
+    if distance(c1_start, c2_start) <= max_dist:
+        return True
+
+    c1_mid = coords1[len(coords1) // 2]
+    c2_mid = coords2[len(coords2) // 2]
+    if distance(c1_mid, c2_mid) <= max_dist:
+        return True
+
+    c1_end = coords1[-1]
+    c2_end = coords2[-1]
+    return distance(c1_end, c2_end) <= max_dist
+
+
+def get_distances(line, lines, max_dist):
     '''
     Gets the distances from one line to all other lines.
     Distance is calculated by calculating the distance of each
@@ -44,12 +76,26 @@ def get_distances(line, lines):
     a list of distances between one line and all others
     '''
 
-    coords = [to_xyz(coord) for coord in line["coords"]]
+    coords = [coord.to_3D() for coord in line.coords]
 
-    dists = [
-        np.min(cdist(coords, [to_xyz(coord) for coord in line2["coords"]]), axis=1)
-    for line2 in lines
-            ]
+    # dists = [
+    #     np.min(cdist(coords, [to_xyz(coord) for coord in line2["coords"]]), axis=1)
+    #     for line2 in lines
+    #     ]
+
+    dists = []
+    for line2 in lines:
+        coords2 = []
+        for coord in line2.coords:
+            coords2.append(coord.to_3D())
+
+        if not nearby_check(coords, coords2, max_dist * 3):
+            dists.append([])
+            continue
+
+        coords_ndarray = np.array([coord.to_ndarray() for coord in coords])
+        coords2_ndarray = np.array([coord.to_ndarray() for coord in coords])
+        dists.append(np.min(cdist(coords_ndarray, coords2_ndarray), axis=1))
 
     return dists
 
@@ -91,10 +137,32 @@ def read_data(start, sim_id, time_offset):
             )
         })
 
+    print(lines)
+
     return lines
 
 
-def generate_network(lines, max_dist):
+def get_close_lines(line: Line, lines: List[Line], ico_points_ms, line_points_ms, threshold: float | int) -> Set[str]:
+    line_coords_ms_0_idx = line_points_ms[line.id][0]
+    line_coords_ms_0 = [line.coords[coord[0]].to_3D().to_ndarray() for coord in line_coords_ms_0_idx.values()]
+
+    close_lines = set()
+
+    for line_2 in lines:
+        if line_2.id == line.id:
+            continue
+
+        line_2_coords_ms_0_idx = line_points_ms[line_2.id][0]
+        line_2_coords_ms_0 = [line_2.coords[coord[0]].to_3D().to_ndarray() for coord in line_2_coords_ms_0_idx.values()]
+        dists = np.min(cdist(line_coords_ms_0, line_2_coords_ms_0), axis=1) * EARTH_RADIUS
+        
+        if np.any(dists < threshold):
+            close_lines.add(line_2.id)
+
+    return close_lines
+
+
+def generate_network(lines: List[Line], ico_points_ms, line_points_ms, max_dist: int):
     '''
     Generates a network given a list of lines and a max distance
     required for two lines to be linked
@@ -109,40 +177,44 @@ def generate_network(lines, max_dist):
     [{ nodes, links }] : A list of nodes and links representing the network
     '''
 
-    nodes = []
+    nodes = set()
     links = []
-    earth_radius = 6371
 
-    for i, line in enumerate(lines):
-        nodes.append({"id": line["id"]})
-        dists = get_distances(line, lines)
+    bar = alive_it(lines, title="Generating network")
+    for line in bar:
+        nodes.add(line.id)
+        close_lines = get_close_lines(line, lines, ico_points_ms, line_points_ms, 50)
 
-        ratios = [np.sum(dist <= max_dist / earth_radius) / len(dist)
-                  for dist in dists]
-
-        for j, ratio in enumerate(ratios):
-            if i == j or ratio == 0:
-                continue
-
-            links.append({
-                "source": line["id"],
-                "target": lines[j]["id"],
-                "weight": ratio
-            })
-
-    return {"nodes": nodes, "links": links}
+    # nodes = []
+    # links = []
+    #
+    # for i, line in enumerate(lines):
+    #     print(i)
+    #     nodes.append({"id": line.id})
+    #     dists = get_distances(line, lines, max_dist)
+    #
+    #     ratios = []
+    #     for dist in dists:
+    #         if len(dist) == 0:
+    #             ratios.append(0)
+    #             continue
+    #         ratios.append(np.sum(dist <= max_dist / EARTH_RADIUS) / len(dist))
+    #
+    #     for j, ratio in enumerate(ratios):
+    #         if i == j or ratio == 0:
+    #             continue
+    #
+    #         links.append({
+    #             "source": line.id,
+    #             "target": lines[j].id,
+    #             "weight": ratio
+    #         })
+    #
+    # return {"nodes": nodes, "links": links}
 
 
 if __name__ == "__main__":
-    lines = []
-    for i in range(50):
-        lines += read_data("2024082712", i, 0)
+    lines = get_all_lines("2024101900", 0, "jet")
+    ico_points_ms, line_points_ms = multiscale(lines, 2)
 
-    # centers = []
-    # for line in lines:
-    #     centers.append({
-    #         "id": f"{line['sim_id']}|{int(line['line_id'])}",
-    #         "center": get_geometric_center(line["coords"])
-    #     })
-
-    generate_network(lines, 5)
+    generate_network(lines, ico_points_ms, line_points_ms, 50)

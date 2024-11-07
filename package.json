@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "@types/d3": "^7.4.3"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.4"
+  }
+}

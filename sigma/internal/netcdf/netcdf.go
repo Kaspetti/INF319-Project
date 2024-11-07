@@ -11,7 +11,7 @@ import (
 
 // GetAllLines gets all lines of a given date from all ensemble members.
 // Dates range from 0-240 and is hours since simulation start.
-func GetAllLines(dataFolder string, time int64) ([]Line, error) {
+func GetAllLines(dataFolder string, time int64, ) ([]Line, error) {
 	allLines := make([]Line, 0)
 	for i := 0; i < 50; i++ {
 		lines, err := getLines(dataFolder, int64(i), time)

@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from data import read_data, generate_network
+from line_reader import get_all_lines
 
 
 app = FastAPI()
@@ -36,18 +37,17 @@ class Network(BaseModel):
 
 
 @app.get("/get-networks", response_model=Network)
-def get_network(sim_start: str = "2024082712",
+def get_network(sim_start: str = "2024101900",
                 time_offset: int = 0,
                 dist_threshold: float = 0.1):
-    lines = []
-    for i in range(50):
-        lines += read_data(sim_start, i, time_offset)
+
+    lines = get_all_lines(sim_start, time_offset, "jet")
 
     return generate_network(lines, dist_threshold)
 
 
 @app.get("/get-coords")
-def get_coords(sim_start: str = "2024082712",
+def get_coords(sim_start: str = "2024101900",
                time_offset: int = 0):
     lines = []
     for i in range(50):
