@@ -1,9 +1,9 @@
 from __future__ import annotations
-from typing import Optional, List, Any, Tuple
+from typing import List
 from dataclasses import dataclass
 from itertools import combinations
 
-from coords import Coord3D, CoordGeo, Coord2D
+from coords import Coord3D, CoordGeo
 from line_reader import Line
 
 from icosphere import icosphere
@@ -11,13 +11,6 @@ from scipy.spatial import KDTree
 import numpy as np
 from numpy.typing import NDArray
 from alive_progress import alive_it
-import pandas as pd
-import geopandas as gpd
-from shapely.geometry import LineString, Point
-import matplotlib.pyplot as plt
-import cartopy.crs as ccrs
-import cartopy.feature as cfeature
-
 
 @dataclass
 class IcoPoint:

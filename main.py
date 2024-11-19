@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from typing import List
 from data import read_data, generate_network
 from line_reader import get_all_lines
 
@@ -22,10 +23,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 class Node(BaseModel):
     id: str
-
 
 class Link(BaseModel):
     source: str
@@ -34,8 +33,8 @@ class Link(BaseModel):
 
 
 class Network(BaseModel):
-    nodes: list[Node]
-    links: list[Link]
+    nodes: List[Node]
+    links: List[Link]
 
 
 @app.get("/get-networks", response_model=Network)
@@ -45,8 +44,9 @@ def get_network(sim_start: str = "2024101900",
 
     lines = get_all_lines(sim_start, time_offset, "jet")
     ico_points_ms, line_points_ms = multiscale(lines, 2)
+    network = generate_network(lines, ico_points_ms, line_points_ms, dist_threshold)
 
-    return generate_network(lines, ico_points_ms, line_points_ms, dist_threshold)
+    return network
 
 
 @app.get("/get-coords")
