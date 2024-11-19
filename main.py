@@ -1,10 +1,11 @@
+from typing import List
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import List
+
 from data import read_data, generate_network
 from line_reader import get_all_lines
-
 from multiscale import multiscale
 
 
@@ -40,7 +41,7 @@ class Network(BaseModel):
 @app.get("/get-networks", response_model=Network)
 def get_network(sim_start: str = "2024101900",
                 time_offset: int = 0,
-                dist_threshold: float = 0.1):
+                dist_threshold: int = 50):
 
     lines = get_all_lines(sim_start, time_offset, "jet")
     ico_points_ms, line_points_ms = multiscale(lines, 2)
@@ -52,13 +53,7 @@ def get_network(sim_start: str = "2024101900",
 @app.get("/get-coords")
 def get_coords(sim_start: str = "2024101900",
                time_offset: int = 0):
-    lines = []
-    for i in range(50):
-        ls = read_data(sim_start, i, time_offset)
-        for i in range(len(ls)):
-            ls[i]["coords"] = [{"lat": coord[0], "lon": coord[1]}
-                               for coord in ls[i]["coords"]]
 
-        lines.extend(ls)
+    lines = get_all_lines(sim_start, time_offset, "jet")
 
     return lines

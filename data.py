@@ -138,8 +138,6 @@ def read_data(start, sim_id, time_offset):
             )
         })
 
-    print(lines)
-
     return lines
 
 
@@ -181,35 +179,73 @@ def generate_network(lines: List[Line], ico_points_ms, line_points_ms, max_dist:
     nodes = []
     links = []
 
+    cluster_amount = 0
+    clusters = {}
+    node_to_cluster = {}
+
     bar = alive_it(lines, title="Generating network")
-
-    group_amount = 0
-
-    i = 0
     for line in bar:
-        nodes.append({"id": line.id})
-        close_lines = get_close_lines(line, lines, ico_points_ms, line_points_ms, max_dist)
+
+        close_lines = get_close_lines(line, lines, ico_points_ms, line_points_ms, 1000)
         dists = get_distances(line, close_lines, max_dist)
 
         ratios = []
         for dist in dists:
-            if len(dist) == 0:
-                ratios.append(0)
-                continue
             ratios.append(np.sum(dist <= max_dist / EARTH_RADIUS) / len(dist))
 
-        for j, ratio in enumerate(ratios):
-            if i == j or ratio == 0:
+        for i, ratio in enumerate(ratios):
+            if ratio < 0.05:
                 continue
 
-            links.append({
-                "source": line.id,
-                "target": lines[j].id,
-                "weight": ratio
-            })
-        i += 1
+            close_line = close_lines[i]
+            cluster = -1
+            if line.id in node_to_cluster:
+                cluster = node_to_cluster[line.id]
+                node_to_cluster[close_line.id] = cluster
+            elif close_line.id in node_to_cluster:
+                cluster = node_to_cluster[close_line.id]
+                node_to_cluster[line.id] = cluster
+            else:
+                cluster = cluster_amount
+                node_to_cluster[line.id] = cluster
+                node_to_cluster[close_line.id] = cluster
+                clusters[cluster] = []
+                cluster_amount += 1
+
+            clusters[cluster].append({"source": line.id, "target": close_line.id, "weight": ratio})
+
+    nodes = [{"id": line.id} for line in lines]
+    links = []
+    for cluster in clusters.values():
+        links.extend(cluster)
 
     return {"nodes": nodes, "links": links}
+
+    # i = 0
+    # for line in bar:
+    #     nodes.append({"id": line.id})
+    #     close_lines = get_close_lines(line, lines, ico_points_ms, line_points_ms, max_dist)
+    #     dists = get_distances(line, close_lines, max_dist)
+    #
+    #     ratios = []
+    #     for dist in dists:
+    #         if len(dist) == 0:
+    #             ratios.append(0)
+    #             continue
+    #         ratios.append(np.sum(dist <= max_dist / EARTH_RADIUS) / len(dist))
+    #
+    #     for j, ratio in enumerate(ratios):
+    #         if i == j or ratio == 0:
+    #             continue
+    #
+    #         links.append({
+    #             "source": line.id,
+    #             "target": lines[j].id,
+    #             "weight": ratio
+    #         })
+    #     i += 1
+    #
+    # return {"nodes": nodes, "links": links}
 
 
 if __name__ == "__main__":
