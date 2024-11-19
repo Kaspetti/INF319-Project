@@ -221,32 +221,6 @@ def generate_network(lines: List[Line], ico_points_ms, line_points_ms, max_dist:
 
     return {"nodes": nodes, "links": links}
 
-    # i = 0
-    # for line in bar:
-    #     nodes.append({"id": line.id})
-    #     close_lines = get_close_lines(line, lines, ico_points_ms, line_points_ms, max_dist)
-    #     dists = get_distances(line, close_lines, max_dist)
-    #
-    #     ratios = []
-    #     for dist in dists:
-    #         if len(dist) == 0:
-    #             ratios.append(0)
-    #             continue
-    #         ratios.append(np.sum(dist <= max_dist / EARTH_RADIUS) / len(dist))
-    #
-    #     for j, ratio in enumerate(ratios):
-    #         if i == j or ratio == 0:
-    #             continue
-    #
-    #         links.append({
-    #             "source": line.id,
-    #             "target": lines[j].id,
-    #             "weight": ratio
-    #         })
-    #     i += 1
-    #
-    # return {"nodes": nodes, "links": links}
-
 
 if __name__ == "__main__":
     lines = get_all_lines("2024101900", 0, "jet")
