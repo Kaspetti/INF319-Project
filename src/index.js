@@ -3,7 +3,7 @@ import Graph from "graphology"
 import FA2Layout from 'graphology-layout-forceatlas2/worker'
 import { inferSettings } from "graphology-layout-forceatlas2"
 import { json } from "d3-fetch"
-import { scaleLinear, scaleQuantize } from "d3-scale"
+import { scaleLinear, scaleOrdinal } from "d3-scale"
 import { schemeCategory10 } from "d3-scale-chromatic"
 import { rgb } from "d3-color"
 import L from "leaflet"
@@ -80,7 +80,7 @@ async function populateGraph(simStart, timeOffset, distThreshold) {
   const nodes = data.nodes.map(d => ({...d}))
 
   nodeClusters = data.node_clusters
-  line_colormap = scaleQuantize(schemeCategory10)
+  line_colormap = scaleOrdinal(schemeCategory10)
     .domain([0, Math.max(...Object.values(nodeClusters))])
 
   const weights = links.map(l => l.weight)
