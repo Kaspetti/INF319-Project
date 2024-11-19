@@ -3,7 +3,8 @@ import Graph from "graphology"
 import FA2Layout from 'graphology-layout-forceatlas2/worker'
 import { inferSettings } from "graphology-layout-forceatlas2"
 import { json } from "d3-fetch"
-import { scaleLinear } from "d3-scale"
+import { scaleLinear, scaleQuantize } from "d3-scale"
+import { schemeCategory10 } from "d3-scale-chromatic"
 import { rgb } from "d3-color"
 import L from "leaflet"
 import 'leaflet/dist/leaflet.css'
@@ -21,9 +22,10 @@ L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png', 
   attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
 }).addTo(map);
 const lineLayer = L.layerGroup().addTo(map)
+
 map.on("click", function() {
   lines.forEach(function(l) {
-    l.setStyle({color: "blue", weight: 2})
+    l.setStyle({color: line_colormap(nodeClusters[l.options.id]), weight: 2})
   })
 
   sigmaInstance.graph.nodes().forEach(function(n) {
@@ -44,6 +46,10 @@ const distThresholdInput = document.getElementById("dist-threshold-input")
 let lines = []
 let selectedLine = null
 let selectedNode = null
+
+let nodeClusters = null
+
+let line_colormap = null
 
 
 async function updateView() { 
@@ -69,8 +75,13 @@ async function populateGraph(simStart, timeOffset, distThreshold) {
   const graph = sigmaInstance.graph;
 
   const data = await json(`http://localhost:8000/get-networks?sim_start=${simStart}&time_offset=${timeOffset}&dist_threshold=${distThreshold}`) 
-  const links = data.links.map(d => ({...d}))
+
+  const links = Object.values(data.clusters).flat().map(d => ({...d}));
   const nodes = data.nodes.map(d => ({...d}))
+
+  nodeClusters = data.node_clusters
+  line_colormap = scaleQuantize(schemeCategory10)
+    .domain([0, Math.max(...Object.values(nodeClusters))])
 
   const weights = links.map(l => l.weight)
   const colorScale = scaleLinear()
@@ -111,7 +122,7 @@ async function populateGraph(simStart, timeOffset, distThreshold) {
     sigmaInstance.refresh()
 
     lines.forEach(function(l) {
-      l.setStyle({ color: "blue", weight: 1 })
+      l.setStyle({ color: line_colormap(nodeClusters[l.options.id]), weight: 1 })
     })
 
     selectedNode = null
@@ -137,12 +148,12 @@ async function populateMap(simStart, timeOffset) {
     } else {
       latLons = l.coords.map(coord => [coord.lat, coord.lon])
     }
-
+    
     let line = L.polyline(latLons, 
       { 
         weight: 2,
         id: l.id,
-        color: "blue",
+        color: line_colormap(nodeClusters[l.id]),
         bubblingMouseEvents: false
       }).addTo(lineLayer)
 
@@ -211,7 +222,7 @@ function clearHighlight() {
   })
 
   lines.forEach(function(l) {
-    l.setStyle({ color: "blue", weight: 1 })
+    l.setStyle({ color: line_colormap(nodeClusters[l.options.id]), weight: 1 })
   })
 
   document.getElementById("id-search-input").value = ""

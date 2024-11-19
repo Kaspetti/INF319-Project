@@ -1,10 +1,10 @@
-from typing import List
+from typing import List, Dict
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from data import read_data, generate_network
+from data import generate_network
 from line_reader import get_all_lines
 from multiscale import multiscale
 
@@ -27,6 +27,7 @@ app.add_middleware(
 class Node(BaseModel):
     id: str
 
+
 class Link(BaseModel):
     source: str
     target: str
@@ -35,7 +36,8 @@ class Link(BaseModel):
 
 class Network(BaseModel):
     nodes: List[Node]
-    links: List[Link]
+    clusters: Dict[int, List[Link]]
+    node_clusters: Dict[str, int]
 
 
 @app.get("/get-networks", response_model=Network)

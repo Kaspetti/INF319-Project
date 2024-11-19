@@ -176,9 +176,6 @@ def generate_network(lines: List[Line], ico_points_ms, line_points_ms, max_dist:
     [{ nodes, links }] : A list of nodes and links representing the network
     '''
 
-    nodes = []
-    links = []
-
     cluster_amount = 0
     clusters = {}
     node_to_cluster = {}
@@ -215,11 +212,7 @@ def generate_network(lines: List[Line], ico_points_ms, line_points_ms, max_dist:
             clusters[cluster].append({"source": line.id, "target": close_line.id, "weight": ratio})
 
     nodes = [{"id": line.id} for line in lines]
-    links = []
-    for cluster in clusters.values():
-        links.extend(cluster)
-
-    return {"nodes": nodes, "links": links}
+    return {"nodes": nodes, "clusters": clusters, "node_clusters": node_to_cluster}
 
 
 if __name__ == "__main__":
