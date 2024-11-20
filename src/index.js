@@ -57,14 +57,19 @@ async function updateView() {
   lineLayer.clearLayers();
 
   const header = document.getElementById("graph-header")
+
   header.style.color = "red"
   header.innerText = "Generating network. Please wait..."
+  timeOffsetInput.disabled = true;
+  distThresholdInput.disabled = true;
 
   await populateGraph("2024101900", timeOffsetInput.value, distThresholdInput.value)
   await populateMap("2024101900", timeOffsetInput.value)
 
   header.style.color = "black"
   header.innerText = `Showing network for timestep ${timeOffsetInput.value} with distance threshold ${distThresholdInput.value}km`
+  timeOffsetInput.disabled = false;
+  distThresholdInput.disabled = false;
 
   sigmaInstance.refresh()
 }
