@@ -42,6 +42,8 @@ let layout = new FA2Layout(sigmaInstance.graph)
 
 const timeOffsetInput = document.getElementById("time-offset-input")
 const distThresholdInput = document.getElementById("dist-threshold-input")
+const jetButton = document.getElementById("jet")
+const mtaButton = document.getElementById("mta")
 
 let lines = []
 let selectedLine = null
@@ -62,6 +64,8 @@ async function updateView() {
   header.innerText = "Generating network. Please wait..."
   timeOffsetInput.disabled = true;
   distThresholdInput.disabled = true;
+  jetButton.disabled = true
+  mtaButton.disabled = true
 
   const selectedLineType = document.querySelector('input[name="line-type"]:checked').id
 
@@ -72,6 +76,8 @@ async function updateView() {
   header.innerText = `Showing network of ${selectedLineType} lines at timestep ${timeOffsetInput.value} with distance threshold ${distThresholdInput.value}km`
   timeOffsetInput.disabled = false;
   distThresholdInput.disabled = false;
+  jetButton.disabled = false
+  mtaButton.disabled = false
 
   sigmaInstance.refresh()
 }
