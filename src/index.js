@@ -63,11 +63,13 @@ async function updateView() {
   timeOffsetInput.disabled = true;
   distThresholdInput.disabled = true;
 
-  await populateGraph("2024101900", timeOffsetInput.value, distThresholdInput.value)
-  await populateMap("2024101900", timeOffsetInput.value)
+  const selectedLineType = document.querySelector('input[name="line-type"]:checked').id
+
+  await populateGraph("2024101900", timeOffsetInput.value, distThresholdInput.value, selectedLineType)
+  await populateMap("2024101900", timeOffsetInput.value, selectedLineType)
 
   header.style.color = "black"
-  header.innerText = `Showing network for timestep ${timeOffsetInput.value} with distance threshold ${distThresholdInput.value}km`
+  header.innerText = `Showing network of ${selectedLineType} lines at timestep ${timeOffsetInput.value} with distance threshold ${distThresholdInput.value}km`
   timeOffsetInput.disabled = false;
   distThresholdInput.disabled = false;
 
@@ -75,11 +77,11 @@ async function updateView() {
 }
 
 
-async function populateGraph(simStart, timeOffset, distThreshold) {
+async function populateGraph(simStart, timeOffset, distThreshold, lineType) {
   selectedNode = null
   const graph = sigmaInstance.graph;
 
-  const data = await json(`http://localhost:8000/get-networks?sim_start=${simStart}&time_offset=${timeOffset}&dist_threshold=${distThreshold}`) 
+  const data = await json(`http://localhost:8000/get-networks?sim_start=${simStart}&time_offset=${timeOffset}&dist_threshold=${distThreshold}&line_type=${lineType}`) 
 
   const links = Object.values(data.clusters).flat().map(d => ({...d}));
   const nodes = data.nodes.map(d => ({...d}))
@@ -136,9 +138,9 @@ async function populateGraph(simStart, timeOffset, distThreshold) {
 }
 
 
-async function populateMap(simStart, timeOffset) {
+async function populateMap(simStart, timeOffset, lineType) {
   selectedLine = null
-  const ls = await json(`http://localhost:8000/get-coords?sim_start=${simStart}&time_offset=${timeOffset}`) 
+  const ls = await json(`http://localhost:8000/get-coords?sim_start=${simStart}&time_offset=${timeOffset}&line_type=${lineType}`) 
 
   lines = []
   ls.forEach(function(l) {

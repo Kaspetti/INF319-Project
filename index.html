@@ -13,6 +13,11 @@
     <label for="dist-threshold-input">Dist Threshold (km)</label>
     <input type="number" id="dist-threshold-input" name="dist-threshold-input" value="50">
     <br>
+    <label for="jet">Jet</label>
+    <input type="radio" id="jet" name="line-type" checked>
+    <label for="mta">Mta</label>
+    <input type="radio" id="mta" name="line-type">
+    <br>
     <button id="show-graph-button">Show Graph</button>
     <br>
     <label for="id-search-input">Search Id</label>
@@ -22,7 +27,7 @@
     <br>
     <button id="clear-search-button">Clear Search</button>
 
-    <h1 id="graph-header">Showing network for timestep 0 with distance threshold 50km</h1>
+    <h1 id="graph-header">Showing network of jet lines at timestep 0 with distance threshold 50km</h1>
 
     <div id="container-container">
       <div id="graph-container" class="vis-container"></div>

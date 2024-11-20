@@ -1,4 +1,4 @@
-from typing import List, Dict
+from typing import List, Dict, Literal
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -43,9 +43,10 @@ class Network(BaseModel):
 @app.get("/get-networks", response_model=Network)
 def get_network(sim_start: str = "2024101900",
                 time_offset: int = 0,
-                dist_threshold: int = 50):
+                dist_threshold: int = 50,
+                line_type: Literal["jet", "mta"] = "jet"):
 
-    lines = get_all_lines(sim_start, time_offset, "jet")
+    lines = get_all_lines(sim_start, time_offset, line_type)
     ico_points_ms, line_points_ms = multiscale(lines, 2)
     network = generate_network(lines, ico_points_ms, line_points_ms, dist_threshold)
 
@@ -54,8 +55,9 @@ def get_network(sim_start: str = "2024101900",
 
 @app.get("/get-coords")
 def get_coords(sim_start: str = "2024101900",
-               time_offset: int = 0):
+               time_offset: int = 0,
+               line_type: Literal["jet", "mta"] = "jet"):
 
-    lines = get_all_lines(sim_start, time_offset, "jet")
+    lines = get_all_lines(sim_start, time_offset, line_type)
 
     return lines
