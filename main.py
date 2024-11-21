@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from data import generate_network
-from line_reader import get_all_lines
+from line_reader import get_all_lines_at_time, get_all_lines_in_ens
 from multiscale import multiscale
 
 
@@ -43,12 +43,19 @@ class Network(BaseModel):
 @app.get("/get-networks", response_model=Network)
 def get_network(sim_start: str = "2024101900",
                 time_offset: int = 0,
+                ens_id: int = 0,
                 dist_threshold: int = 50,
-                line_type: Literal["jet", "mta"] = "jet"):
+                required_ratio: float = 0.05,
+                line_type: Literal["jet", "mta"] = "jet",
+                all_or_one: Literal["all", "one"] = "all"):
 
-    lines = get_all_lines(sim_start, time_offset, line_type)
+    if all_or_one == "one":
+        lines = get_all_lines_in_ens(sim_start, ens_id, line_type)
+    else:
+        lines = get_all_lines_at_time(sim_start, time_offset, line_type)
+
     ico_points_ms, line_points_ms = multiscale(lines, 0)
-    network = generate_network(lines, ico_points_ms, line_points_ms, dist_threshold)
+    network = generate_network(lines, ico_points_ms, line_points_ms, dist_threshold, required_ratio)
 
     return network
 
@@ -56,8 +63,13 @@ def get_network(sim_start: str = "2024101900",
 @app.get("/get-coords")
 def get_coords(sim_start: str = "2024101900",
                time_offset: int = 0,
-               line_type: Literal["jet", "mta"] = "jet"):
+               ens_id: int = 0,
+               line_type: Literal["jet", "mta"] = "jet",
+               all_or_one: Literal["all", "one"] = "all"):
 
-    lines = get_all_lines(sim_start, time_offset, line_type)
+    if all_or_one == "one":
+        lines = get_all_lines_in_ens(sim_start, ens_id, line_type)
+    else:
+        lines = get_all_lines_at_time(sim_start, time_offset, line_type)
 
     return lines

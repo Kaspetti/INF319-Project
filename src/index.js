@@ -41,9 +41,14 @@ map.on("click", function() {
 let layout = new FA2Layout(sigmaInstance.graph)
 
 const timeOffsetInput = document.getElementById("time-offset-input")
+const ensIdInput = document.getElementById("ens-id-input")
 const distThresholdInput = document.getElementById("dist-threshold-input")
+const requiredRatioInput = document.getElementById("required-ratio-input")
+const showGraphButton = document.getElementById("show-graph-button")
 const jetButton = document.getElementById("jet")
 const mtaButton = document.getElementById("mta")
+const allEnsButton = document.getElementById("all")
+const oneEnsButton = document.getElementById("one")
 
 let lines = []
 let selectedLine = null
@@ -62,32 +67,43 @@ async function updateView() {
 
   header.style.color = "red"
   header.innerText = "Generating network. Please wait..."
-  timeOffsetInput.disabled = true;
-  distThresholdInput.disabled = true;
+  timeOffsetInput.disabled = true
+  ensIdInput.disabled = true
+  distThresholdInput.disabled = true
+  requiredRatioInput.disabled = true
   jetButton.disabled = true
   mtaButton.disabled = true
+  allEnsButton.disabled = true
+  oneEnsButton.disabled = true
+  showGraphButton.disabled = true
 
   const selectedLineType = document.querySelector('input[name="line-type"]:checked').id
+  const allOrOneEns = document.querySelector('input[name="one-or-all-ens"]:checked').id
 
-  await populateGraph("2024101900", timeOffsetInput.value, distThresholdInput.value, selectedLineType)
-  await populateMap("2024101900", timeOffsetInput.value, selectedLineType)
+  await populateGraph("2024101900", timeOffsetInput.value, ensIdInput.value, distThresholdInput.value, requiredRatioInput.value, selectedLineType, allOrOneEns)
+  await populateMap("2024101900", timeOffsetInput.value, ensIdInput.value, selectedLineType, allOrOneEns)
 
   header.style.color = "black"
   header.innerText = `Showing network of ${selectedLineType} lines at timestep ${timeOffsetInput.value} with distance threshold ${distThresholdInput.value}km`
-  timeOffsetInput.disabled = false;
-  distThresholdInput.disabled = false;
+  timeOffsetInput.disabled = false
+  ensIdInput.disabled = false
+  distThresholdInput.disabled = false
+  requiredRatioInput.disabled = false
   jetButton.disabled = false
   mtaButton.disabled = false
+  allEnsButton.disabled = false
+  oneEnsButton.disabled = false
+  showGraphButton.disabled = false
 
   sigmaInstance.refresh()
 }
 
 
-async function populateGraph(simStart, timeOffset, distThreshold, lineType) {
+async function populateGraph(simStart, timeOffset, ensId, distThreshold, requiredRatio, lineType, allOrOneEns) {
   selectedNode = null
   const graph = sigmaInstance.graph;
 
-  const data = await json(`http://localhost:8000/get-networks?sim_start=${simStart}&time_offset=${timeOffset}&dist_threshold=${distThreshold}&line_type=${lineType}`) 
+  const data = await json(`http://localhost:8000/get-networks?sim_start=${simStart}&time_offset=${timeOffset}&ens_id=${ensId}&dist_threshold=${distThreshold}&required_ratio=${requiredRatio}&line_type=${lineType}&all_or_one=${allOrOneEns}`) 
 
   const links = Object.values(data.clusters).flat().map(d => ({...d}));
   const nodes = data.nodes.map(d => ({...d}))
@@ -144,9 +160,9 @@ async function populateGraph(simStart, timeOffset, distThreshold, lineType) {
 }
 
 
-async function populateMap(simStart, timeOffset, lineType) {
+async function populateMap(simStart, timeOffset, ensId, lineType, allOrOneEns) {
   selectedLine = null
-  const ls = await json(`http://localhost:8000/get-coords?sim_start=${simStart}&time_offset=${timeOffset}&line_type=${lineType}`) 
+  const ls = await json(`http://localhost:8000/get-coords?sim_start=${simStart}&time_offset=${timeOffset}&ens_id=${ensId}&line_type=${lineType}&all_or_one=${allOrOneEns}`) 
 
   lines = []
   ls.forEach(function(l) {
@@ -202,6 +218,9 @@ function setFocus(id) {
 
 
 async function init() {
+  jetButton.checked = true
+  allEnsButton.checked = true
+
   await updateView()
 }
 

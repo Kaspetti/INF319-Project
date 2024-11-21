@@ -10,13 +10,24 @@
     <label for="time-offset-input">Time Offset</label>
     <input type="number" id="time-offset-input" name="time-offset-input" value="0">
     <br>
+    <label for="ens-id-input">Ensemble Member Id</label>
+    <input type="number" id="ens-id-input" name="ens-id-input" value="0">
+    <br>
     <label for="dist-threshold-input">Dist Threshold (km)</label>
     <input type="number" id="dist-threshold-input" name="dist-threshold-input" value="50">
+    <br>
+    <label for="required-ratio-input">Required Ratio (0-1)</label>
+    <input type="number" id="required-ratio-input" name="required-ratio-input" value="0.05">
     <br>
     <label for="jet">Jet</label>
     <input type="radio" id="jet" name="line-type" checked>
     <label for="mta">Mta</label>
     <input type="radio" id="mta" name="line-type">
+    <br>
+    <label for="all-ens">All Members</label>
+    <input type="radio" id="all" name="one-or-all-ens" checked>
+    <label for="one-ens">One Member</label>
+    <input type="radio" id="one" name="one-or-all-ens">
     <br>
     <button id="show-graph-button">Show Graph</button>
     <br>

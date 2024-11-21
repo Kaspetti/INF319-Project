@@ -25,7 +25,7 @@ class Line:
     coords: List[CoordGeo]
 
 
-def get_all_lines(
+def get_all_lines_at_time(
     start: str, time_offset: int, line_type: Literal["mta", "jet"]
 ) -> List[Line]:
     """Reads all lines from a NETCDF4 file and returns them.
@@ -85,6 +85,45 @@ def get_all_lines(
                 coords = dateline_fix(coords)
 
             all_lines.append(Line(id=f"{i}|{int(id_)}", coords=coords))
+
+    return all_lines
+
+
+def get_all_lines_in_ens(
+    start: str, ens_nr: int, line_type: Literal["mta", "jet"]
+) -> List[Line]:
+    all_lines = []
+
+    start_time = np.datetime64(
+        f"{start[0:4]}-{start[4:6]}-{start[6:8]}T{start[8:10]}:00:00"
+    )
+
+    base_path = f"./data/{line_type}/{start}/"
+    file_path = f"ec.ens_{ens_nr:02d}.{start}.sfc.mta.nc"
+
+    if line_type == "jet":
+        file_path = f"ec.ens_{ens_nr:02d}.{start}.pv2000.jetaxis.nc"
+    full_path = base_path + file_path
+
+    ds = xr.open_dataset(full_path)
+    ds = ds.assign_coords(
+        date_line=xr.DataArray(
+            [f"{d}_{l}" for d, l in zip(ds.date.values, ds.line_id.values)],
+            dims=ds.date.dims  # or whichever dimension these variables share
+        )
+    )
+    grouped_ds = list(ds.groupby("date_line"))
+
+    for id_, line in grouped_ds:
+        coords = [
+            CoordGeo(lon, lat)            
+            for lon, lat in zip(line.longitude.values, line.latitude.values)
+        ]
+        hour_offset = (line.date.values[0] - start_time) // np.timedelta64(1, "h")
+        if max(line.longitude.values) - min(line.longitude.values) > 180:
+            coords = dateline_fix(coords)
+
+        all_lines.append(Line(id=f"{hour_offset}|{line.line_id.values[0]}", coords=coords))
 
     return all_lines
 
