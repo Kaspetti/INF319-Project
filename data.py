@@ -78,11 +78,6 @@ def get_distances(line, lines, max_dist):
 
     coords = [coord.to_3D() for coord in line.coords]
 
-    # dists = [
-    #     np.min(cdist(coords, [to_xyz(coord) for coord in line2["coords"]]), axis=1)
-    #     for line2 in lines
-    #     ]
-
     dists = []
     for line2 in lines:
         coords2 = []
@@ -183,7 +178,7 @@ def generate_network(lines: List[Line], ico_points_ms, line_points_ms, max_dist:
     bar = alive_it(lines, title="Generating network")
     for line in bar:
 
-        close_lines = get_close_lines(line, lines, ico_points_ms, line_points_ms, 1000)
+        close_lines = get_close_lines(line, lines, ico_points_ms, line_points_ms, max_dist * 10)
         dists = get_distances(line, close_lines, max_dist)
 
         ratios = []

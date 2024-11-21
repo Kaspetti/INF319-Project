@@ -47,7 +47,7 @@ def get_network(sim_start: str = "2024101900",
                 line_type: Literal["jet", "mta"] = "jet"):
 
     lines = get_all_lines(sim_start, time_offset, line_type)
-    ico_points_ms, line_points_ms = multiscale(lines, 2)
+    ico_points_ms, line_points_ms = multiscale(lines, 0)
     network = generate_network(lines, ico_points_ms, line_points_ms, dist_threshold)
 
     return network
