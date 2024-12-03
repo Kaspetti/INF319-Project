@@ -51,6 +51,7 @@ const allEnsButton = document.getElementById("all")
 const oneEnsButton = document.getElementById("one")
 
 let lines = []
+let centroids = []
 let selectedLine = null
 let selectedNode = null
 
@@ -163,6 +164,7 @@ async function populateGraph(simStart, timeOffset, ensId, distThreshold, require
 async function populateMap(simStart, timeOffset, ensId, lineType, allOrOneEns) {
   selectedLine = null
   const ls = await json(`http://localhost:8000/get-coords?sim_start=${simStart}&time_offset=${timeOffset}&ens_id=${ensId}&line_type=${lineType}&all_or_one=${allOrOneEns}`) 
+  const cs = await json(`http://localhost:8000/get-centroids?sim_start=${simStart}&time_offset=${timeOffset}&ens_id=${ensId}&line_type=${lineType}&all_or_one=${allOrOneEns}`) 
 
   lines = []
   ls.forEach(function(l) {
@@ -189,6 +191,10 @@ async function populateMap(simStart, timeOffset, ensId, lineType, allOrOneEns) {
     line.on("click", e => setFocus(e.target.options.id))
 
     lines.push(line)
+  })
+
+  cs.forEach(function(c) {
+    let circle = L.circle([c.lat, c.lon]).addTo(lineLayer)
   })
 }
 

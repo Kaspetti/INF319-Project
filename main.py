@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from data import generate_network
+from data import generate_network, get_centroids
 from line_reader import get_all_lines_at_time, get_all_lines_in_ens
 from multiscale import multiscale
 
@@ -73,3 +73,19 @@ def get_coords(sim_start: str = "2024101900",
         lines = get_all_lines_at_time(sim_start, time_offset, line_type)
 
     return lines
+
+
+@app.get("/get-centroids")
+def get_line_centroids(sim_start: str = "2024101900",
+               time_offset: int = 0,
+               ens_id: int = 0,
+               line_type: Literal["jet", "mta"] = "jet",
+               all_or_one: Literal["all", "one"] = "all"):
+
+    if all_or_one == "one":
+        lines = get_all_lines_in_ens(sim_start, ens_id, line_type)
+    else:
+        lines = get_all_lines_at_time(sim_start, time_offset, line_type)
+
+    return get_centroids(lines)
+

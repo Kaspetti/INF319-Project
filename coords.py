@@ -32,6 +32,13 @@ class Coord3D:
             z=self.z * s
         )
 
+    def __add__(self, o: Coord3D) -> Coord3D:
+        return Coord3D(
+            x=self.x + o.x,
+            y=self.y + o.y,
+            z=self.z + o.z
+        )
+
     def __str__(self) -> str:
         return f"Coord3D({self.x}, {self.y}, {self.z})"
 

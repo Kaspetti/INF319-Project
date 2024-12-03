@@ -1,7 +1,7 @@
 from typing import Literal, List
 from dataclasses import dataclass
 
-from coords import CoordGeo
+from coords import Coord3D, CoordGeo
 
 import numpy as np
 import xarray as xr
@@ -23,6 +23,7 @@ class Line:
 
     id: str
     coords: List[CoordGeo]
+    centroid: CoordGeo
 
 
 def get_all_lines_at_time(
@@ -84,7 +85,14 @@ def get_all_lines_at_time(
             if max(line.longitude.values) - min(line.longitude.values) > 180:
                 coords = dateline_fix(coords)
 
-            all_lines.append(Line(id=f"{i}|{int(id_)}", coords=coords))
+            centroid = Coord3D(0, 0, 0)
+            for coord in coords:
+                coord_3D = coord.to_3D()
+                centroid += coord_3D
+
+            centroid = (centroid * (1/len(coords))).to_lon_lat()
+
+            all_lines.append(Line(id=f"{i}|{int(id_)}", coords=coords, centroid=centroid))
 
     return all_lines
 
@@ -123,7 +131,14 @@ def get_all_lines_in_ens(
         if max(line.longitude.values) - min(line.longitude.values) > 180:
             coords = dateline_fix(coords)
 
-        all_lines.append(Line(id=f"{hour_offset}|{line.line_id.values[0]}", coords=coords))
+        centroid = Coord3D(0, 0, 0)
+        for coord in coords:
+            coord_3D = coord.to_3D()
+            centroid += coord_3D
+
+        centroid = (centroid * (1/len(coords))).to_lon_lat()
+
+        all_lines.append(Line(id=f"{hour_offset}|{line.line_id.values[0]}", coords=coords, centroid=centroid))
 
     return all_lines
 

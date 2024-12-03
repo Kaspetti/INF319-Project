@@ -1,6 +1,7 @@
 import math
 from typing import List
 
+from coords import Coord3D, CoordGeo
 from line_reader import get_all_lines_at_time, Line, get_all_lines_in_ens
 from multiscale import multiscale
 
@@ -156,6 +157,10 @@ def get_close_lines(line: Line, lines: List[Line], ico_points_ms, line_points_ms
     return close_lines
 
 
+def get_centroids(lines: List[Line]) -> List[CoordGeo]:
+    return [line.centroid for line in lines]
+
+
 def generate_network(lines: List[Line], ico_points_ms, line_points_ms, max_dist: int, required_ratio: float):
     '''
     Generates a network given a list of lines and a max distance
@@ -212,6 +217,4 @@ def generate_network(lines: List[Line], ico_points_ms, line_points_ms, max_dist:
 
 if __name__ == "__main__":
     lines = get_all_lines_in_ens("2024101900", 0, "jet")
-    ico_points_ms, line_points_ms = multiscale(lines, 2)
-
-    generate_network(lines, ico_points_ms, line_points_ms, 50, 0.05)
+    print(get_centroids(lines))
