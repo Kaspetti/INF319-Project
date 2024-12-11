@@ -1,20 +1,27 @@
 import math
-from typing import List
+from typing import TypedDict
 
-from coords import Coord3D, CoordGeo
-from line_reader import get_all_lines_at_time, Line, get_all_lines_in_ens
-from multiscale import multiscale
+from coords import CoordGeo
+from line_reader import Line, get_all_lines_in_ens
 
 import xarray as xr
 import numpy as np
 from scipy.spatial.distance import cdist
 from alive_progress import alive_it
 
+from multiscale import multiscale
+
+
+class Connection(TypedDict):
+    source: str
+    target: str
+    weight: float
+
 
 EARTH_RADIUS = 6371
 
 
-def to_xyz(v):
+def to_xyz(v: list[float]):
     '''
     Converts a [lat, lon] coordinate into 3D coordinates ([x, y ,z]) on the
     unit sphere
@@ -137,7 +144,7 @@ def read_data(start, sim_id, time_offset):
     return lines
 
 
-def get_close_lines(line: Line, lines: List[Line], ico_points_ms, line_points_ms, threshold: float | int) -> List[Line]:
+def get_close_lines(line: Line, lines: list[Line], ico_points_ms, line_points_ms, threshold: float | int) -> list[Line]:
     line_coords_ms_0_idx = line_points_ms[line.id][0]
     line_coords_ms_0 = [line.coords[coord[0]].to_3D().to_ndarray() for coord in line_coords_ms_0_idx.values()]
 
@@ -157,11 +164,11 @@ def get_close_lines(line: Line, lines: List[Line], ico_points_ms, line_points_ms
     return close_lines
 
 
-def get_centroids(lines: List[Line]) -> List[CoordGeo]:
+def get_centroids(lines: list[Line]) -> list[CoordGeo]:
     return [line.centroid for line in lines]
 
 
-def generate_network(lines: List[Line], ico_points_ms, line_points_ms, max_dist: int, required_ratio: float):
+def generate_network(lines: list[Line], ico_points_ms, line_points_ms, max_dist: int, required_ratio: float):
     '''
     Generates a network given a list of lines and a max distance
     required for two lines to be linked
@@ -177,8 +184,8 @@ def generate_network(lines: List[Line], ico_points_ms, line_points_ms, max_dist:
     '''
 
     cluster_amount = 0
-    clusters = {}
-    node_to_cluster = {}
+    clusters: dict[int, list[Connection]] = {}
+    node_to_cluster: dict[str, int] = {}
 
     bar = alive_it(lines, title="Generating network")
     for line in bar:
@@ -190,6 +197,7 @@ def generate_network(lines: List[Line], ico_points_ms, line_points_ms, max_dist:
         for dist in dists:
             ratios.append(np.sum(dist <= max_dist / EARTH_RADIUS) / len(dist))
 
+        # NODES WITH NO CONNECTIONS ARENT ADDED
         for i, ratio in enumerate(ratios):
             if ratio < required_ratio:
                 continue
@@ -217,4 +225,5 @@ def generate_network(lines: List[Line], ico_points_ms, line_points_ms, max_dist:
 
 if __name__ == "__main__":
     lines = get_all_lines_in_ens("2024101900", 0, "jet")
-    print(get_centroids(lines))
+    multiscale(lines, 2)
+    # print(get_centroids(lines))

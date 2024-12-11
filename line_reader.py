@@ -90,9 +90,9 @@ def get_all_lines_at_time(
                 coord_3D = coord.to_3D()
                 centroid += coord_3D
 
-            centroid = (centroid * (1/len(coords))).to_lon_lat()
+            centroid_geo = (centroid * (1/len(coords))).to_lon_lat()
 
-            all_lines.append(Line(id=f"{i}|{int(id_)}", coords=coords, centroid=centroid))
+            all_lines.append(Line(id=f"{i}|{int(id_)}", coords=coords, centroid=centroid_geo))
 
     return all_lines
 
@@ -136,9 +136,9 @@ def get_all_lines_in_ens(
             coord_3D = coord.to_3D()
             centroid += coord_3D
 
-        centroid = (centroid * (1/len(coords))).to_lon_lat()
+        centroid_geo = (centroid * (1/len(coords))).to_lon_lat()
 
-        all_lines.append(Line(id=f"{hour_offset}|{line.line_id.values[0]}", coords=coords, centroid=centroid))
+        all_lines.append(Line(id=f"{hour_offset}|{line.line_id.values[0]}", coords=coords, centroid=centroid_geo))
 
     return all_lines
 

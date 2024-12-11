@@ -73,16 +73,16 @@ def inside_check(pt: NDArray[np.float_], tri: NDArray[np.float_]) -> bool:
 def multiscale(lines: List[Line], subdivs: int):
     ico_verts, faces = icosphere()
     ico_points_ms = {}
-    subdivided_edges = {}
-    line_points_ms = {}
+    subdivided_edges: dict[tuple[int, int], int] = {}
+    line_points_ms: dict[str, dict[int, dict[int, tuple[int, float]]]] = {}
 
     for i, pt in enumerate(ico_verts):
-        coord_3D = Coord3D(x=pt[0], y=pt[1], z=pt[2])
+        coord = Coord3D(x=pt[0], y=pt[1], z=pt[2])
         ico_pt = IcoPoint(
             id=i,
             ms_level=0,
-            coord_3D=coord_3D,
-            coord_geo=coord_3D.to_lon_lat()
+            coord_3D=coord,
+            coord_geo=coord.to_lon_lat()
         )
         ico_points_ms[i] = ico_pt
 
@@ -100,7 +100,9 @@ def multiscale(lines: List[Line], subdivs: int):
         for i, pt in enumerate(line.coords):
             coord_3D = pt.to_3D().to_list()
 
-            closest_dists, closest_idx = ico_points_base_kd.query(coord_3D, 4)
+            closest_dists: list[float]
+            closest_idx: list[int]
+            closest_dists, closest_idx = ico_points_base_kd.query(coord_3D, 4)  # type: ignore
             closest_points = [ico_points_ms[closest_idx[0]],
                               ico_points_ms[closest_idx[1]],
                               ico_points_ms[closest_idx[2]]]

@@ -2,7 +2,6 @@
 # -*- encoding: utf-8
 
 
-import pickle
 import numpy as np
 import xarray as xr
 import pandas as pd
@@ -124,7 +123,6 @@ def line_supersample(df):
         lon[lon < 0.0] += 360.0
 
     lat = df.latitude.to_numpy()
-    viwvt = df.viwvt.to_numpy()
     # ff = df["ff@maxff"].to_numpy()
     # pt = df["pt@maxff"].to_numpy()
 
@@ -134,7 +132,6 @@ def line_supersample(df):
         (
             np.interp(xnew, x, lon),
             np.interp(xnew, x, lat),
-            np.interp(xnew, x, viwvt),
             # np.interp(xnew, x, ff),
             # np.interp(xnew, x, pt),
         ),
@@ -436,12 +433,15 @@ if __name__ == "__main__":
 
         prev_df = df0
         for id in prev_df.line_id.unique():
-            coords = np.array(prev_df[prev_df['line_id'] == id][['longitude', 'latitude']].to_numpy())
+            coords = prev_df[prev_df['line_id'] == id][['longitude', 'latitude']].to_numpy()
             if max(coords[:, 0]) - min(coords[:, 0]) > 180:
                 coords = dateline_fix(coords)
 
             geometry.append(LineString(coords))
             ids.append(id)
+
+        if time_offset > 12:
+            break
 
         if time_offset < 72:
             time_offset += 3
@@ -461,7 +461,7 @@ if __name__ == "__main__":
     )    
     grouped = df.groupby(['date', 'old_id', 'line_id']).size()
     
-    for (date, old_id, line_id), _ in grouped.items():
+    for (date, old_id, line_id), _ in grouped.items():  # type: ignore
         contingency.loc[old_id, line_id] += 1
 
     row_sums = contingency.sum(axis=1)
@@ -502,180 +502,10 @@ if __name__ == "__main__":
     ax.add_feature(cfeature.BORDERS, linestyle=':', edgecolor="darkgrey")    # type: ignore
 
     df_id = pd.DataFrame(ids, columns=["id"])   # type: ignore
-    gdf = gpd.GeoDataFrame(df_id, geometry=geometry, crs="EPSG:4326")
+    gdf = gpd.GeoDataFrame(df_id, geometry=geometry, crs="EPSG:4326")   # type: ignore
 
     cmap = colormaps["tab20"]
-    norm = plt.Normalize(gdf['id'].min(), gdf['id'].max())
+    norm = plt.Normalize(gdf['id'].min(), gdf['id'].max())  # type: ignore
 
     gdf.plot(ax=ax, transform=ccrs.PlateCarree(), linewidth=1, color=cmap(norm(gdf["id"])))
     plt.show()
-
-
-    # df0 = df[df.date == np.datetime64("2024-10-19T00:00")]
-    # df1 = df[df.date == np.datetime64("2024-10-19T03:00")]
-    #
-    # fig = plt.figure(figsize=(12, 8))
-    # ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
-    #
-    # geometry = []
-    # for id in df0.line_id.unique():
-    #     l1 = df0[df0.line_id == id]
-    #     l1_coords = l1[['longitude', 'latitude']].to_numpy()
-    #     geometry.append(LineString(l1_coords))
-    #     gdf = gpd.GeoDataFrame(pd.DataFrame(), geometry=geometry, crs="EPSG:4326")
-    #
-    # gdf.plot(ax=ax, transform=ccrs.PlateCarree(), linewidth=2, color="pink")
-    #
-    #
-    # geometry = []
-    # for id in df1.line_id.unique():
-    #     l1 = df1[df1.line_id == id]
-    #     l1_coords = l1[['longitude', 'latitude']].to_numpy()
-    #     geometry.append(LineString(l1_coords))
-    #     gdf = gpd.GeoDataFrame(pd.DataFrame(), geometry=geometry, crs="EPSG:4326")
-    #
-    # gdf.plot(ax=ax, transform=ccrs.PlateCarree(), linewidth=2, color="cyan")
-    #
-    #
-    # matches, overlaps, N = track_lines(df0, df1)
-    #
-    # g1 = []
-    # g2 = []
-    # for (id1, id2) in matches:
-    #     l1 = df0[df0.line_id == id1]
-    #     l2 = df1[df1.line_id == id2]
-    #
-    #     l1_coords = l1[['longitude', 'latitude']].to_numpy()
-    #     l2_coords = l2[['longitude', 'latitude']].to_numpy()
-    #     g1.append(LineString(l1_coords))
-    #     g2.append(LineString(l2_coords))
-    #
-    # gdf_1 = gpd.GeoDataFrame(pd.DataFrame(), geometry=g1, crs="EPSG:4326")
-    # gdf_2 = gpd.GeoDataFrame(pd.DataFrame(), geometry=g2, crs="EPSG:4326")
-    #
-    # ax.add_feature(cfeature.LAND, facecolor="white", edgecolor="black") # type: ignore
-    # ax.add_feature(cfeature.OCEAN, facecolor="lightgrey")   # type: ignore
-    # ax.add_feature(cfeature.COASTLINE, edgecolor="black")   # type: ignore
-    # ax.add_feature(cfeature.BORDERS, linestyle=':', edgecolor="darkgrey")    # type: ignore
-    #
-    # gdf_1.plot(ax=ax, transform=ccrs.PlateCarree(), linewidth=2, color="blue")
-    # gdf_2.plot(ax=ax, transform=ccrs.PlateCarree(), linewidth=2, color="red")
-    #
-    # plt.show()
-
-    exit()
-
-    if debug_one is None:
-        jet_graph = {
-            "dates": [],
-            "genesis": {},
-            "lysis": {},
-            "single": {},
-            "forward": {},
-            "backward": {},
-        }
-        prev_ts = None
-
-        for yr, mon in periods:
-            df = xr.open_dataset(
-                f"{ipath}/ea.ans.{yr:04d}{mon:02d}.pv2000.jetaxis.nc"
-            ).to_dataframe()
-            add_length_col(df)
-
-            overlaps = []
-            dateso = []
-
-            dates = sorted({date for date in df.date})  # Make unique and sort
-
-            # Track over period boundaries if previous time step is available
-            if prev_ts is not None:
-                # Sanity check and protection agains non-sequential periods
-                if (dates[0] - prev_ts.date.iloc[0]) > pd.Timedelta(6, "hours"):
-                    print(
-                        f'Warning: NOT tracking lines between {prev_ts.date.iloc[0].strftime("%Y%m%d %H")} and '
-                        '{dates[0].strftime("%Y%m%d %H")}, as more than 6 hours are between them.'
-                    )
-                else:
-                    print(
-                        f'Tracking lines from from {prev_ts.date.iloc[0].strftime("%Y%m%d %H")}.'
-                    )
-
-                    matches_, overlaps_, N = track_lines(
-                        prev_ts, df[df.date == dates[0]], debug=debug_plot
-                    )
-                    update_graph(
-                        jet_graph,
-                        prev_ts.date.iloc[0],
-                        dates[0],
-                        set(prev_ts.line_id),
-                        matches_,
-                    )
-                    dateso.extend(
-                        [
-                            prev_ts.date.iloc[0],
-                        ]
-                        * N
-                    )
-                    overlaps.extend(overlaps_)
-
-            # Track within period
-            for date0, date1 in zip(dates[:-1], dates[1:]):
-                print(f'Tracking lines from from {date0.strftime("%Y%m%d %H")}.')
-
-                matches_, overlaps_, N = track_lines(
-                    df[df.date == date0], df[df.date == date1], debug=debug_plot
-                )
-                update_graph(
-                    jet_graph, date0, date1, set(df[df.date == date0].line_id), matches_
-                )
-                dateso.extend(
-                    [
-                        date0,
-                    ]
-                    * N
-                )
-                overlaps.extend(overlaps_)
-
-            # Save last time step for next period
-            prev_ts = df[df.date == date1]
-
-            overlaps = np.concatenate(overlaps, axis=0)
-            print(overlaps.shape, len(dateso))
-            dfo = pd.DataFrame(
-                {
-                    "date0": dateso,
-                    "longitude0": overlaps[:, 0],
-                    "latitude0": overlaps[:, 1],
-                    "ff@maxff0": overlaps[:, 2],
-                    "pt@maxff0": overlaps[:, 3],
-                    "longitude1": overlaps[:, 4],
-                    "latitude1": overlaps[:, 5],
-                    "ff@maxff1": overlaps[:, 6],
-                    "pt@maxff1": overlaps[:, 7],
-                }
-            )
-            dfo.to_xarray().to_netcdf(
-                f"{ipath}/ea.ans.{yr:04d}{mon:02d}.pv2000.jetaxis_connections.nc"
-            )
-
-        f = open(f"{ipath}/ea.ans.{periodstr}.pv2000.jetaxis_connections.pickle", "wb")
-        pickle.dump(jet_graph, f)
-        f.close()
-
-    else:
-        yr, mon, day, hr = debug
-
-        df = xr.open_dataset(
-            f"{ipath}/ea.ans.{yr:04d}{mon:02d}.pv2000.jetaxis.nc"
-        ).to_dataframe()
-        add_length_col(df)
-
-        date0 = pd.Timestamp(yr, mon, day, hr)
-        date1 = date0 + pd.Timedelta(3, "hours")
-
-        matches_, overlaps_, N = track_lines(
-            df[df.date == date0], df[df.date == date1], debug=True
-        )
-
-
-# C'est le fin
