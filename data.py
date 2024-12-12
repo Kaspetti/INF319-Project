@@ -219,7 +219,12 @@ def generate_network(lines: list[Line], ico_points_ms, line_points_ms, max_dist:
 
             clusters[cluster].append({"source": line.id, "target": close_line.id, "weight": ratio})
 
-    nodes = [{"id": line.id} for line in lines]
+    nodes = []
+    for line in lines:
+        if line.id not in node_to_cluster:
+            node_to_cluster[line.id] = -1
+        nodes.append({"id": line.id})
+
     return {"nodes": nodes, "clusters": clusters, "node_clusters": node_to_cluster}
 
 

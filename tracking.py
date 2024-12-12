@@ -31,7 +31,6 @@ if __name__ == "__main__":
     ico_points_ms_t1, line_points_ms_t1 = multiscale(lines_t1, 2)
     network_t1 = generate_network(lines_t1, ico_points_ms_t1, line_points_ms_t1, 50, 0.05)
 
-
     rows = []
     for line in lines_t1:
         for coord in line.coords:
@@ -44,7 +43,8 @@ if __name__ == "__main__":
     add_length_col(df1)
 
     all_matches = []
-    unmatched_ids = set(df1['line_id'])
+    unmatched_ids_t0 = set(df0["line_id"])
+    unmatched_ids_t1 = set(df1['line_id'])
     bar = alive_it(range(50), title="Tracking lines")
     for i in bar:
         df0_i = df0[df0["line_id"].str.split('|').str[0] == str(i)]
@@ -52,8 +52,10 @@ if __name__ == "__main__":
 
         matches, _, _ = track_lines(df0_i, df1_i)
         for old_id, new_id in matches:
-            if new_id in unmatched_ids:
-                unmatched_ids.remove(new_id)
+            if old_id in unmatched_ids_t0:
+                unmatched_ids_t0.remove(old_id)
+            if new_id in unmatched_ids_t1:
+                unmatched_ids_t1.remove(new_id)
 
         all_matches += matches
 
@@ -64,20 +66,23 @@ if __name__ == "__main__":
 
     contingency = pd.DataFrame(
         0, 
-        index=all_ids,
-        columns=all_ids
+        index=all_ids+["no_match"],
+        columns=all_ids+["no_match"]
     )    
 
     for match in all_matches:
-        if match[0] not in network_t0["node_clusters"]:
-            continue
-        if match[1] not in network_t1["node_clusters"]:
-            continue
-
         cluster_t0 = network_t0["node_clusters"][match[0]]
         cluster_t1 = network_t1["node_clusters"][match[1]]
 
         contingency.loc[cluster_t0, cluster_t1] += 1
+
+    for no_match in unmatched_ids_t0:
+        cluster_t0 = network_t0["node_clusters"][no_match]
+        contingency.loc[cluster_t0, "no_match"] += 1
+
+    for no_match in unmatched_ids_t1:
+        cluster_t1 = network_t1["node_clusters"][no_match]
+        contingency.loc["no_match", cluster_t1] += 1
 
     plt.figure(figsize=(12, 10))
     sns.heatmap(contingency, 
