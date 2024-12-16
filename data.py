@@ -1,21 +1,32 @@
 import math
 from typing import TypedDict
 
+from numpy._typing import NDArray
+
 from coords import Coord3D, CoordGeo
 from line_reader import Line, get_all_lines_in_ens
 
-import xarray as xr
 import numpy as np
 from scipy.spatial.distance import cdist
-from alive_progress import alive_it
+from alive_progress import alive_it # type: ignore
 
-from multiscale import multiscale
+from multiscale import IcoPoint, multiscale
 
 
 class Connection(TypedDict):
     source: str
     target: str
     weight: float
+
+
+class Node(TypedDict):
+    id: str
+
+
+class Network(TypedDict):
+    nodes: list[Node]
+    clusters: dict[int, list[Connection]]
+    node_clusters: dict[str, int]
 
 
 EARTH_RADIUS = 6371
@@ -67,7 +78,7 @@ def nearby_check(coords1: list[Coord3D], coords2: list[Coord3D], max_dist: float
     return distance(c1_end, c2_end) <= max_dist
 
 
-def get_distances(line: Line, lines: list[Line], max_dist: float) -> list[list[float]]:
+def get_distances(line: Line, lines: list[Line], max_dist: float) -> NDArray[np.float32]:
     '''
     Gets the distances from one line to all other lines.
     Distance is calculated by calculating the distance of each
@@ -101,54 +112,23 @@ def get_distances(line: Line, lines: list[Line], max_dist: float) -> list[list[f
 
         dists.append(np.min(cdist(coords_ndarray, coords2_ndarray), axis=1))
 
-    return dists
+    return np.array(dists)
 
+    # ico_points_ms = {}
+    # subdivided_edges: dict[tuple[int, int], int] = {}
+    # line_points_ms: dict[str, dict[int, dict[int, tuple[int, float]]]] = {}
 
-def read_data(start, sim_id, time_offset):
-    '''
-    Reads a NetCDF file and extracts the lines from it as a list
-    of objects with id and coordinates of the lines
-
-    Parameters
-    ----------
-    start : when the simulation was run (YYYYMMDDHH)
-    sim_id : the id of the simulation (0-49)
-    time_offset : time offset in hours from when the simulation started
-
-    Returns
-    -------
-    [{ "id" : id, "coords": [lat, lon] }...] : a list of lines with
-    id and coords for points
-    '''
-
-    start_time = np.datetime64(f"{start[0:4]}-{start[4:6]}-{start[6:8]}T{start[8:10]}:00:00")
-
-    ds = xr.open_dataset(
-            f"{start}/ec.ens_{sim_id:02d}.{start}.sfc.mta.nc"
-        )
-    date_ds = ds.where(
-                ds.date == start_time + np.timedelta64(time_offset, "h"),
-                drop=True
-            )
-
-    lines = []
-    grouped_ds = list(date_ds.groupby("line_id"))
-    for id, line in grouped_ds:
-        lines.append({
-            "id": f"{sim_id}|{int(id)}",
-            "coords": np.column_stack(
-                (line.latitude.values, line.longitude.values)
-            )
-        })
-
-    return lines
-
-
-def get_close_lines(line: Line, lines: list[Line], ico_points_ms, line_points_ms, threshold: float | int) -> list[Line]:
+def get_close_lines(
+        line: Line,
+        lines: list[Line],
+        ico_points_ms: dict[int, IcoPoint],
+        line_points_ms: dict[str, dict[int, dict[int, tuple[int, float]]]],
+        threshold: float | int
+) -> list[Line]:
     line_coords_ms_0_idx = line_points_ms[line.id][0]
     line_coords_ms_0 = [line.coords[coord[0]].to_3D().to_ndarray() for coord in line_coords_ms_0_idx.values()]
 
-    close_lines = []
+    close_lines: list[Line] = []
 
     for line_2 in lines:
         if line_2.id == line.id:
@@ -168,7 +148,14 @@ def get_centroids(lines: list[Line]) -> list[CoordGeo]:
     return [line.centroid for line in lines]
 
 
-def generate_network(lines: list[Line], ico_points_ms, line_points_ms, max_dist: int, required_ratio: float):
+def generate_network(
+        lines: list[Line],
+        ico_points_ms: dict[int, IcoPoint],
+        line_points_ms: dict[str, dict[int, dict[int, tuple[int, float]]]],
+        max_dist: int,
+        required_ratio: float
+) -> Network:
+    # return {"nodes": nodes, "clusters": clusters, "node_clusters": node_to_cluster}
     '''
     Generates a network given a list of lines and a max distance
     required for two lines to be linked
@@ -187,13 +174,15 @@ def generate_network(lines: list[Line], ico_points_ms, line_points_ms, max_dist:
     clusters: dict[int, list[Connection]] = {}
     node_to_cluster: dict[str, int] = {}
 
+    # connections: list[Connection] = []
+
     bar = alive_it(lines, title="Generating network")
     for line in bar:
 
         close_lines = get_close_lines(line, lines, ico_points_ms, line_points_ms, max_dist * 10)
         dists = get_distances(line, close_lines, max_dist)
 
-        ratios = []
+        ratios: list[float] = []
         for dist in dists:
             ratios.append(np.sum(dist <= max_dist / EARTH_RADIUS) / len(dist))
 
@@ -219,7 +208,7 @@ def generate_network(lines: list[Line], ico_points_ms, line_points_ms, max_dist:
 
             clusters[cluster].append({"source": line.id, "target": close_line.id, "weight": ratio})
 
-    nodes = []
+    nodes: list[Node] = []
     for line in lines:
         if line.id not in node_to_cluster:
             node_to_cluster[line.id] = -1
