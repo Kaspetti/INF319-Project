@@ -1,7 +1,7 @@
 import math
 from typing import TypedDict
 
-from coords import CoordGeo
+from coords import Coord3D, CoordGeo
 from line_reader import Line, get_all_lines_in_ens
 
 import xarray as xr
@@ -43,7 +43,7 @@ def to_xyz(v: list[float]):
     return [x, y, z]
 
 
-def distance(c1, c2):
+def distance(c1: Coord3D, c2: Coord3D):
     return math.sqrt(
         math.pow(c1.x - c2.x, 2) +
         math.pow(c1.y - c2.y, 2) +
@@ -51,7 +51,7 @@ def distance(c1, c2):
     )
 
 
-def nearby_check(coords1, coords2, max_dist):
+def nearby_check(coords1: list[Coord3D], coords2: list[Coord3D], max_dist: float) -> bool:
     c1_start = coords1[0]
     c2_start = coords2[0]
     if distance(c1_start, c2_start) <= max_dist:
@@ -67,7 +67,7 @@ def nearby_check(coords1, coords2, max_dist):
     return distance(c1_end, c2_end) <= max_dist
 
 
-def get_distances(line, lines, max_dist):
+def get_distances(line: Line, lines: list[Line], max_dist: float) -> list[list[float]]:
     '''
     Gets the distances from one line to all other lines.
     Distance is calculated by calculating the distance of each
@@ -85,10 +85,10 @@ def get_distances(line, lines, max_dist):
     '''
 
     coords = [coord.to_3D() for coord in line.coords]
+    dists: list[list[float]] = []
 
-    dists = []
     for line2 in lines:
-        coords2 = []
+        coords2: list[Coord3D] = []
         for coord in line2.coords:
             coords2.append(coord.to_3D())
 

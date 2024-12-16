@@ -53,7 +53,7 @@ class Coord3D:
         """Returns the coordinate as a list of three floats"""
         return [self.x, self.y, self.z]
 
-    def to_ndarray(self) -> NDArray[np.float_]:
+    def to_ndarray(self) -> NDArray[np.float32]:
         return np.array(self.to_list())
 
     def drop_axis(self, axis: Literal[0, 1, 2]) -> Coord2D:
