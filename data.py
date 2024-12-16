@@ -1,5 +1,6 @@
 import math
-from typing import TypedDict
+from typing import NamedTuple, TypedDict
+from dataclasses import dataclass
 
 from numpy._typing import NDArray
 
@@ -9,11 +10,13 @@ from line_reader import Line, get_all_lines_in_ens
 import numpy as np
 from scipy.spatial.distance import cdist
 from alive_progress import alive_it # type: ignore
+import networkx as nx
 
 from multiscale import IcoPoint, multiscale
 
 
-class Connection(TypedDict):
+@dataclass(frozen=True)
+class Connection:
     source: str
     target: str
     weight: float
@@ -155,7 +158,6 @@ def generate_network(
         max_dist: int,
         required_ratio: float
 ) -> Network:
-    # return {"nodes": nodes, "clusters": clusters, "node_clusters": node_to_cluster}
     '''
     Generates a network given a list of lines and a max distance
     required for two lines to be linked
@@ -170,11 +172,7 @@ def generate_network(
     [{ nodes, links }] : A list of nodes and links representing the network
     '''
 
-    cluster_amount = 0
-    clusters: dict[int, list[Connection]] = {}
-    node_to_cluster: dict[str, int] = {}
-
-    # connections: list[Connection] = []
+    connections: set[Connection] = set()
 
     bar = alive_it(lines, title="Generating network")
     for line in bar:
@@ -191,22 +189,24 @@ def generate_network(
             if ratio < required_ratio:
                 continue
 
-            close_line = close_lines[i]
-            cluster = -1
-            if line.id in node_to_cluster:
-                cluster = node_to_cluster[line.id]
-                node_to_cluster[close_line.id] = cluster
-            elif close_line.id in node_to_cluster:
-                cluster = node_to_cluster[close_line.id]
-                node_to_cluster[line.id] = cluster
-            else:
-                cluster = cluster_amount
-                node_to_cluster[line.id] = cluster
-                node_to_cluster[close_line.id] = cluster
-                clusters[cluster] = []
-                cluster_amount += 1
+            connections.add(Connection(source=line.id,
+                                       target=close_lines[i].id,
+                                       weight=ratio))
 
-            clusters[cluster].append({"source": line.id, "target": close_line.id, "weight": ratio})
+    clusters: dict[int, list[Connection]] = {}
+    node_to_cluster: dict[str, int] = {}
+
+    G: nx.Graph[str] = nx.Graph()
+    for conn in connections:
+        G.add_edge(conn.source, conn.target, weight=conn.weight)    # type: ignore
+
+    # communities = nx.community.louvain_communities(G, weight='weight')
+    connected_nodes: list[set[str]] = list(nx.connected_components(G))   # type: ignore
+    for i, cluster in enumerate(connected_nodes):
+        sub_graph = G.subgraph(cluster)
+        clusters[i] = [Connection(source=edge[0], target=edge[1], weight=edge[2]["weight"]) for edge in sub_graph.edges(data=True)]
+        for node in cluster:
+            node_to_cluster[node] = i
 
     nodes: list[Node] = []
     for line in lines:
@@ -219,5 +219,5 @@ def generate_network(
 
 if __name__ == "__main__":
     lines = get_all_lines_in_ens("2024101900", 0, "jet")
-    multiscale(lines, 2)
-    # print(get_centroids(lines))
+    ico_points_ms, line_points_ms = multiscale(lines, 2)
+    generate_network(lines, ico_points_ms, line_points_ms, 50, 0.05)
