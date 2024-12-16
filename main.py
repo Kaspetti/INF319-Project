@@ -47,7 +47,8 @@ def get_network(sim_start: str = "2024101900",
                 dist_threshold: int = 50,
                 required_ratio: float = 0.05,
                 line_type: Literal["jet", "mta"] = "jet",
-                all_or_one: Literal["all", "one"] = "all"):
+                all_or_one: Literal["all", "one"] = "all",
+                ):
 
     if all_or_one == "one":
         lines = get_all_lines_in_ens(sim_start, ens_id, line_type)

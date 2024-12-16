@@ -1,5 +1,5 @@
 import math
-from typing import NamedTuple, TypedDict
+from typing import Literal, NamedTuple, TypedDict
 from dataclasses import dataclass
 
 from numpy._typing import NDArray
@@ -156,7 +156,7 @@ def generate_network(
         ico_points_ms: dict[int, IcoPoint],
         line_points_ms: dict[str, dict[int, dict[int, tuple[int, float]]]],
         max_dist: int,
-        required_ratio: float
+        required_ratio: float,
 ) -> Network:
     '''
     Generates a network given a list of lines and a max distance
@@ -200,9 +200,9 @@ def generate_network(
     for conn in connections:
         G.add_edge(conn.source, conn.target, weight=conn.weight)    # type: ignore
 
-    # communities = nx.community.louvain_communities(G, weight='weight')
-    connected_nodes: list[set[str]] = list(nx.connected_components(G))   # type: ignore
-    for i, cluster in enumerate(connected_nodes):
+    communities = list(nx.connected_components(G))   # type: ignore
+
+    for i, cluster in enumerate(communities):   # type: ignore
         sub_graph = G.subgraph(cluster)
         clusters[i] = [Connection(source=edge[0], target=edge[1], weight=edge[2]["weight"]) for edge in sub_graph.edges(data=True)]
         for node in cluster:
