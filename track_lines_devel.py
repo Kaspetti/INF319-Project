@@ -8,16 +8,13 @@ import pandas as pd
 from typing import List
 import matplotlib.pyplot as plt
 from mpl_toolkits.basemap import Basemap
-
-
-import pandas as pd
 import geopandas as gpd
 from shapely.geometry import LineString
-import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 from matplotlib import colormaps
 import seaborn as sns
+from numba import jit
 
 
 SUBSAMPLE = 10
@@ -48,6 +45,7 @@ def dateline_fix(coords: List[List[float]]) -> List[List[float]]:
     return coords
 
 
+@jit
 def dist_sphere(lon1, lat1, lon2, lat2, r=6.37e6):
     ''' Shortest distance on a sphere
 
@@ -139,6 +137,7 @@ def line_supersample(df):
     )
 
 
+@jit
 def find_best_match(i0ref, line0, i1ref, line1):
     best_score = -1.0
     for ioff in range(-25, 27):

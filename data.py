@@ -1,6 +1,7 @@
 import math
 from typing import Literal, NamedTuple, TypedDict
 from dataclasses import dataclass
+import cProfile
 
 from numpy._typing import NDArray
 
@@ -220,4 +221,5 @@ def generate_network(
 if __name__ == "__main__":
     lines = get_all_lines_in_ens("2024101900", 0, "jet")
     ico_points_ms, line_points_ms = multiscale(lines, 2)
-    generate_network(lines, ico_points_ms, line_points_ms, 50, 0.05)
+    # generate_network(lines, ico_points_ms, line_points_ms, 50, 0.05)
+    cProfile.run("generate_network(lines, ico_points_ms, line_points_ms, 50, 0.05)")
