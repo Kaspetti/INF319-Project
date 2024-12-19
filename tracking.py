@@ -1,4 +1,5 @@
-from typing import TypedDict
+import io
+from typing import Literal, TypedDict
 
 from line_reader import get_all_lines_at_time
 from data import generate_network
@@ -9,8 +10,6 @@ import pandas as pd
 from alive_progress import alive_it # type: ignore
 import seaborn as sns
 import matplotlib.pyplot as plt
-from scipy.sparse import csr_matrix
-from scipy.sparse.csgraph import reverse_cuthill_mckee
 
 
 class Row(TypedDict):
@@ -19,9 +18,9 @@ class Row(TypedDict):
     longitude: float
 
 
-if __name__ == "__main__":
+def create_clustermap(simstart: str, time_offset: int, line_type: Literal["mta", "jet"]):
     # Generate clusters at t0
-    lines_t0 = get_all_lines_at_time("2024101900", 0, "mta")
+    lines_t0 = get_all_lines_at_time(simstart, time_offset, line_type)
     ico_points_ms_t0, line_points_ms_t0 = multiscale(lines_t0, 2)
     network_t0 = generate_network(lines_t0, ico_points_ms_t0, line_points_ms_t0, 50, 0.05)
 
@@ -35,9 +34,9 @@ if __name__ == "__main__":
             })
     df0 = pd.DataFrame(rows)
     add_length_col(df0)
-    
+
     # Generate clusters at t1
-    lines_t1 = get_all_lines_at_time("2024101900", 3, "mta")
+    lines_t1 = get_all_lines_at_time(simstart, time_offset + (3 if time_offset < 72 else 6), line_type)
     ico_points_ms_t1, line_points_ms_t1 = multiscale(lines_t1, 2)
     network_t1 = generate_network(lines_t1, ico_points_ms_t1, line_points_ms_t1, 50, 0.05)
 
@@ -97,38 +96,29 @@ if __name__ == "__main__":
     row_totals = contingency.sum(axis=1)  # type: ignore
     col_totals = contingency.sum(axis=0)  # type: ignore
 
-    new_index = [f"{idx} (total: {row_totals[idx]})" for idx in contingency.index]
-    new_columns = [f"{col} (total: {col_totals[col]})" for col in contingency.columns]
+    new_index = [f"{idx} ({row_totals[idx]})" for idx in contingency.index]
+    new_columns = [f"{col} ({col_totals[col]})" for col in contingency.columns]
 
-    contingency.index = new_index
+    contingency.index = new_index   # type: ignore
     contingency.columns = new_columns
 
     g = sns.clustermap(contingency,  # type: ignore
-                   annot=True,
+                   annot=len(contingency.index) < 30 and len(contingency.columns) < 30,
                    fmt='d',
-                   cmap="YlOrRd")
+                   cmap="YlOrRd",)
 
     g.ax_row_dendrogram.set_visible(False)  # type: ignore
     g.ax_col_dendrogram.set_visible(False)  # type: ignore
-    plt.show()  # type: ignore
 
+    g.ax_heatmap.set_xlabel('Clusters at t=3 hours')
+    g.ax_heatmap.set_ylabel('Clusters at t=0 hours')
+    g.ax_heatmap.xaxis.set_label_position('top')
+    g.ax_heatmap.yaxis.set_label_position('right')
+    g.ax_heatmap.yaxis.tick_left()
+    g.ax_heatmap.xaxis.tick_bottom()
 
-    # plt.figure(figsize=(12, 10))  # type: ignore
-    # sns.heatmap(contingency_reordered,   # type: ignore
-    #             cmap='YlOrRd',
-    #             annot=True,
-    #             fmt='d', 
-    #             cbar_kws={'label': 'Cluster ids t0->t1'},
-    #             square=True)
-    # 
-    # plt.title('Cluster IDs Transitions Heatmap')  # type: ignore
-    # plt.xlabel('New Cluster ID')  # type: ignore
-    # plt.ylabel('Old Cluster ID')  # type: ignore
-    # 
-    # # Rotate labels if there are many IDs
-    # plt.xticks(rotation=45, ha='right')  # type: ignore
-    # plt.yticks(rotation=0)  # type: ignore
-    # 
-    # # Adjust layout to prevent label cutoff
-    # plt.tight_layout()
-    # plt.show()  # type: ignore
+    buf = io.BytesIO()
+    g.figure.savefig(buf, format="png", bbox_inches="tight")
+    plt.close(g.figure)
+    buf.seek(0)
+    return buf

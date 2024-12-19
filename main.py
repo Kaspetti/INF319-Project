@@ -1,12 +1,13 @@
 from typing import List, Dict, Literal
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from data import generate_network, get_centroids
 from line_reader import get_all_lines_at_time, get_all_lines_in_ens
 from multiscale import multiscale
+from tracking import create_clustermap
 
 
 app = FastAPI()
@@ -90,3 +91,10 @@ def get_line_centroids(sim_start: str = "2024101900",
 
     return get_centroids(lines)
 
+
+@app.get("/get-clustermap")
+def get_clustermap(sim_start: str = "2024101900",
+                   time_offset: int = 0,
+                   line_type: Literal["jet", "mta"] = "mta"):
+    
+    return Response(content=create_clustermap(sim_start, time_offset, line_type).getvalue(), media_type="image/png")

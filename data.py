@@ -201,7 +201,9 @@ def generate_network(
     for conn in connections:
         G.add_edge(conn.source, conn.target, weight=conn.weight)    # type: ignore
 
-    communities = list(nx.connected_components(G))   # type: ignore
+    # communities = list(nx.connected_components(G))   # type: ignore
+    # Attempts the same cluster ids for each run
+    communities = sorted(nx.connected_components(G), key=lambda x: min(x), reverse=True)
 
     for i, cluster in enumerate(communities):   # type: ignore
         sub_graph = G.subgraph(cluster)
