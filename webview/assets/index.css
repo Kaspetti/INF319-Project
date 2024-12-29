@@ -1,0 +1,16 @@
+body {
+  background-color: #d4dadc;
+}
+
+
+#network-containers {
+  display: flex;
+}
+
+
+.network-container {
+  width: 50vw;
+  height: 95vh;
+  background-color: #d4dadc;
+  border: 2px black solid;
+}
