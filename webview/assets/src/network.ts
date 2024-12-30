@@ -6,10 +6,16 @@ import FA2Layout from "graphology-layout-forceatlas2/worker";
 import { inferSettings } from "graphology-layout-forceatlas2"
 
 
+// Initialize these here so we can use them later
 let sigmaInstanceLeft: Sigma;
 let sigmaInstanceRight: Sigma;
 
 
+/**
+  * Initializes the two Sigma instances on the containers provided.
+  * @param leftContainerId - The left container.
+  * @param rightContainerId - The right container.
+*/
 function initializeSigmaInstances(leftContainerId: string, rightContainerId: string): void {
   if (!sigmaInstanceLeft) {
     const container = document.getElementById(leftContainerId);
@@ -31,6 +37,15 @@ function initializeSigmaInstances(leftContainerId: string, rightContainerId: str
 }
 
 
+/**
+  * Populates the provided graph with the network corresponding to the
+  * parameters provided.
+  * @param graph - The graph instance to populate.
+  * @param simStart - The start time of the simulation (YYYYMMDDHH).
+  * @param timeOffset - The hour offset from the sim start.
+  * @param distThreshold - The distance threshold required for two points to be considered close.
+  * @param requriedRatio - The required ratio of points to be within the distance threshold.
+*/
 async function populateGraph(
   graph: Graph,
   simStart: string,
@@ -51,7 +66,7 @@ async function populateGraph(
     .range(["#ff0000", "#0000ff"]);
 
   nodes.forEach(n => {
-    graph.addNode(n.id, {size: 4, color: "orange", label: n.id, x: Math.random(), y: Math.random()});
+    graph.addNode(n.id, {size: 3, color: "orange", label: n.id, x: Math.random(), y: Math.random()});
   });
 
   links.forEach(l => {
@@ -69,11 +84,14 @@ async function populateGraph(
   const sensibleSettings = inferSettings(graph);
   sensibleSettings.edgeWeightInfluence = 1;
   sensibleSettings.gravity = 1;
-  let layout = new FA2Layout(graph, {settings: sensibleSettings})
+  const layout = new FA2Layout(graph, {settings: sensibleSettings})
   layout.start();
 }
 
 
+/**
+  * Initialized the networks once pywebview is ready.
+*/
 export function initNetworks(): void {
   window.addEventListener('pywebviewready', async function() {
     initializeSigmaInstances("left-network-container", "right-network-container");

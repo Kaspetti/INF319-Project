@@ -4,13 +4,19 @@ body {
 
 
 #network-containers {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: 10px;
+  padding: 10px;
+  width: 95vw;
+  height: 95vh;
 }
 
-
 .network-container {
-  width: 50vw;
-  height: 95vh;
+  width: 100%;
+  height: 100%;
   background-color: #d4dadc;
   border: 2px black solid;
+  min-height: 0;
 }
