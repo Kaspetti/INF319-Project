@@ -92,10 +92,8 @@ async function populateGraph(
 /**
   * Initialized the networks once pywebview is ready.
 */
-export function initNetworks(): void {
-  window.addEventListener('pywebviewready', async function() {
-    initializeSigmaInstances("left-network-container", "right-network-container");
-    await populateGraph(sigmaInstanceLeft.getGraph(), "2024101900", 0, 50, 0.05);
-    await populateGraph(sigmaInstanceRight.getGraph(), "2024101900", 3, 50, 0.05);
-  });
+export async function initNetworks() {
+  initializeSigmaInstances("left-network-container", "right-network-container");
+  await populateGraph(sigmaInstanceLeft.getGraph(), "2024101900", 0, 50, 0.05);
+  await populateGraph(sigmaInstanceRight.getGraph(), "2024101900", 3, 50, 0.05);
 }

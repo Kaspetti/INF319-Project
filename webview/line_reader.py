@@ -1,5 +1,4 @@
-from typing import Literal, List
-from dataclasses import dataclass
+from typing import Literal
 
 from coords import Coord3D, CoordGeo
 
@@ -7,7 +6,6 @@ import numpy as np
 import xarray as xr
 
 
-@dataclass
 class Line:
     """A line.
 
@@ -22,13 +20,25 @@ class Line:
     """
 
     id: str
-    coords: List[CoordGeo]
+    coords: list[CoordGeo]
     centroid: CoordGeo
+
+    def __init__(self, id: str, coords: list[CoordGeo], centroid: CoordGeo) -> None:
+        self.id = id
+        self.coords = coords
+        self.centroid = centroid
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "coords": [{"lon": coord.lon, "lat": coord.lat} for coord in self.coords],
+            "centroid": {"lon": self.centroid.lon, "lat": self.centroid.lat}
+        }
 
 
 def get_all_lines_at_time(
     start: str, time_offset: int, line_type: Literal["mta", "jet"]
-) -> List[Line]:
+) -> list[Line]:
     """Reads all lines from a NETCDF4 file and returns them.
 
     Reads a group of NETCDF4 files of a specific format and returns the lines
@@ -99,7 +109,7 @@ def get_all_lines_at_time(
 
 def get_all_lines_in_ens(
     start: str, ens_nr: int, line_type: Literal["mta", "jet"]
-) -> List[Line]:
+) -> list[Line]:
     all_lines = []
 
     start_time = np.datetime64(
@@ -143,7 +153,7 @@ def get_all_lines_in_ens(
     return all_lines
 
 
-def dateline_fix(coords: List[CoordGeo]) -> List[CoordGeo]:
+def dateline_fix(coords: list[CoordGeo]) -> list[CoordGeo]:
     """Shifts a list of coordinates by 360 degrees longitude.
 
     :param coords: The list of coordinates to shift.

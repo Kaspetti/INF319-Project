@@ -1,9 +1,14 @@
+import { initMaps } from "./map";
 import { initNetworks } from "./network";
 
 
-function init() {
-  initNetworks();
+async function init() {
+  await initMaps();
+  await initNetworks();
 }
 
 
-init();
+// Wait untill pywebview is ready before intializing the visualizations
+window.addEventListener('pywebviewready', async function() {
+  init();
+});

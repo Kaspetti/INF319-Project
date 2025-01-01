@@ -6,7 +6,12 @@ declare global {
         timeOffset: number, 
         distThreshold: number, 
         requiredRatio: number
-      ) => Promise<Network>
+      ) => Promise<Network>,
+
+      get_lines: (
+        simStart: string,
+        timeOffset: number
+      ) => Promise<Line[]>
     }
   };
 }
@@ -25,6 +30,17 @@ type Network = {
   nodes: Node[];
   clusters: Record<number, Connection[]>;
   node_clusters: Record<string, number>;
+}
+
+type CoordGeo = {
+  lat: number;
+  lon: number;
+}
+
+type Line = {
+  id: string;
+  coords: CoordGeo[];
+  centroid: CoordGeo;
 }
 
 export {};

@@ -3,7 +3,7 @@ body {
 }
 
 
-#network-containers {
+#vis-containers {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   grid-template-rows: repeat(2, 1fr);
@@ -13,7 +13,7 @@ body {
   height: 95vh;
 }
 
-.network-container {
+.vis-container {
   width: 100%;
   height: 100%;
   background-color: #d4dadc;
