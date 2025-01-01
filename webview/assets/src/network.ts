@@ -53,7 +53,7 @@ async function populateGraph(
   // ensId: number,
   distThreshold: number,
   requriedRatio: number
-) {
+): Promise<Record<string, number>> {
   
   const data = await pywebview.api.get_networks(simStart, timeOffset, distThreshold, requriedRatio); 
 
@@ -86,14 +86,18 @@ async function populateGraph(
   sensibleSettings.gravity = 1;
   const layout = new FA2Layout(graph, {settings: sensibleSettings})
   layout.start();
+
+  return data.node_clusters;
 }
 
 
 /**
   * Initialized the networks once pywebview is ready.
 */
-export async function initNetworks() {
+export async function initNetworks(): Promise<Record<string, number>[]> {
   initializeSigmaInstances("left-network-container", "right-network-container");
-  await populateGraph(sigmaInstanceLeft.getGraph(), "2024101900", 0, 50, 0.05);
-  await populateGraph(sigmaInstanceRight.getGraph(), "2024101900", 3, 50, 0.05);
+  const nodeClustersLeft = await populateGraph(sigmaInstanceLeft.getGraph(), "2024101900", 0, 50, 0.05);
+  const nodeClustersRight = await populateGraph(sigmaInstanceRight.getGraph(), "2024101900", 3, 50, 0.05);
+
+  return [nodeClustersLeft, nodeClustersRight];
 }

@@ -3,8 +3,8 @@ import { initNetworks } from "./network";
 
 
 async function init() {
-  await initMaps();
-  await initNetworks();
+  const nodeClusters = await initNetworks();
+  await initMaps(nodeClusters[0], nodeClusters[1]);
 }
 
 
