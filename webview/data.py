@@ -213,9 +213,24 @@ def generate_network(
 
     for i, cluster in enumerate(communities):   # type: ignore
         sub_graph = G.subgraph(cluster)
-        clusters[i] = [TypedConnection(source=edge[0], target=edge[1], weight=edge[2]["weight"]) for edge in sub_graph.edges(data=True)]
+        clusters[i] = []
+
+        added_ens_members = {}
+        for edge in sub_graph.edges(data=True):
+            ens_id0, line_id0 = edge[0].split("|")
+            ens_id1, line_id1 = edge[1].split("|")
+            if (ens_id0 not in added_ens_members or added_ens_members[ens_id0] == line_id0) and (ens_id1 not in added_ens_members or added_ens_members[ens_id1] == line_id1):
+                clusters[i].append(TypedConnection(source=edge[0], target=edge[1], weight=edge[2]["weight"]))
+                added_ens_members[ens_id0] = line_id0
+                added_ens_members[ens_id1] = line_id1
+
+        # clusters[i] = [TypedConnection(source=edge[0], target=edge[1], weight=edge[2]["weight"]) for edge in sub_graph.edges(data=True)]
         for node in cluster:
-            node_to_cluster[node] = i
+            ens_id, line_id = node.split("|")
+            if ens_id in added_ens_members and added_ens_members[ens_id] == line_id:
+                node_to_cluster[node] = i
+            else:
+                node_to_cluster[node] = -1
 
     nodes: list[Node] = []
     for line in lines:

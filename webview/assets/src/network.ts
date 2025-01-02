@@ -46,7 +46,7 @@ function initializeSigmaInstances(leftContainerId: string, rightContainerId: str
   * @param distThreshold - The distance threshold required for two points to be considered close.
   * @param requriedRatio - The required ratio of points to be within the distance threshold.
 */
-async function populateGraph(
+async function populateNetwork(
   graph: Graph,
   simStart: string,
   timeOffset: number,
@@ -96,8 +96,34 @@ async function populateGraph(
 */
 export async function initNetworks(): Promise<Record<string, number>[]> {
   initializeSigmaInstances("left-network-container", "right-network-container");
-  const nodeClustersLeft = await populateGraph(sigmaInstanceLeft.getGraph(), "2024101900", 0, 50, 0.05);
-  const nodeClustersRight = await populateGraph(sigmaInstanceRight.getGraph(), "2024101900", 3, 50, 0.05);
+  const nodeClustersLeft = await populateNetwork(sigmaInstanceLeft.getGraph(), "2024101900", 0, 50, 0.05);
+  const nodeClustersRight = await populateNetwork(sigmaInstanceRight.getGraph(), "2024101900", 3, 50, 0.05);
 
   return [nodeClustersLeft, nodeClustersRight];
+}
+
+
+export async function populateNetworks(
+  timeOffset: number,
+  distThreshold: number,
+  requiredRatio: number,
+): Promise<Record<string, number>[]> {
+  sigmaInstanceLeft.getGraph().clear();
+  sigmaInstanceLeft.setGraph(sigmaInstanceRight.getGraph());
+  return []
+
+  // sigmaInstanceLeft.getGraph().clear();
+  // sigmaInstanceRight.getGraph().clear();
+  //
+  // const nodeClustersLeft = 
+  //   await populateNetwork(sigmaInstanceLeft.getGraph(), "2024101900", timeOffset, distThreshold, requiredRatio);
+  //
+  // const nextTimeOffset = timeOffset < 72 ? timeOffset + 3 : timeOffset + 6;
+  // const nodeClustersRight =
+  //   await populateNetwork(sigmaInstanceRight.getGraph(), "2024101900", nextTimeOffset, distThreshold, requiredRatio);
+  //
+  // sigmaInstanceLeft.refresh();
+  // sigmaInstanceRight.refresh();
+  //
+  // return [nodeClustersLeft, nodeClustersRight];
 }

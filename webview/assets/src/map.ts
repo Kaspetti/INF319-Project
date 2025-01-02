@@ -13,7 +13,7 @@ let lineLayerRight: L.LayerGroup;
 
 function initMapsContainers(leftContainerId: string, rightContainerId: string): void {
   if (!mapLeft) {
-    mapLeft = L.map(leftContainerId).setView([20, 0], 2);
+    mapLeft = L.map(leftContainerId).setView([20, 0], 1);
     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png', {
       maxZoom: 15,
     attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
@@ -21,7 +21,7 @@ function initMapsContainers(leftContainerId: string, rightContainerId: string): 
     lineLayerLeft = L.layerGroup().addTo(mapLeft);
   }
   if (!mapRight) {
-    mapRight = L.map(rightContainerId).setView([20, 0], 2);
+    mapRight = L.map(rightContainerId).setView([20, 0], 1);
     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png', {
       maxZoom: 15,
     attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
@@ -54,10 +54,11 @@ async function populateMap(
       latLons = l.coords.map(coord => [coord.lat, coord.lon])
     }
 
+    const lineColor = nodeClusters[l.id] == -1 ? "#000" : lineColormap(nodeClusters[l.id])
     L.polyline(latLons, 
       { 
         weight: 2,
-        color: lineColormap(nodeClusters[l.id]),
+        color: lineColor,
         bubblingMouseEvents: false
       }).addTo(lineLayer)
   })
