@@ -6,27 +6,21 @@
   </head>
 
   <body>
-    <input type="number" id="time-offset-input" name="time-offset-input" class="number-input" value="0">
-    <label for="time-offset-input">Time offset (h)</label>
-    <br>
-    <input type="number" id="dist-threshold-input" name="dist-threshold-input" class="number-input" value="50">
-    <label for="dist-threshold-input">Dist Threshold (km)</label>
-    <br>
-    <input type="number" id="ratio-input" name="ratio-input" class="number-input" value="0.05">
-    <label for="ratio-input">Dist Threshold Ratio (0-1)</label>
-    <br>
-    <button id="submit-button">Show</button>
-
     <div id="vis-containers">
       <div id="left-network-container" class="vis-container top-container">
-        <h1 class="container-header">2024101900 +0h</h1>
+        <h1 id="left-network-heading" class="container-heading">2024101900 +0h</h1>
       </div>    
       <div id="right-network-container" class="vis-container top-container">
-        <h1 class="container-header">2024101900 +3h</h1>
+        <h1 id="right-network-heading" class="container-heading">2024101900 +3h</h1>
       </div>    
       <div id="left-map-container" class="vis-container bottom-container"></div>    
       <div id="right-map-container" class="vis-container bottom-container"></div>    
     </div>
+    <button id="previous">Previous</button>
+    <button id="next">Next</button>
+    <br>
+    <button id="reset-views-button">Reset Views</button>
+    <button id="reset-layouts-button">Reset Layouts</button>
 
     <script src="./dist/bundle.js"></script>
   </body>

@@ -1,14 +1,21 @@
-import Sigma from "sigma";
+import Sigma, { Camera } from "sigma";
 import Graph from "graphology";
 import { scaleLinear } from "d3-scale"
 import { rgb } from "d3-color";
 import FA2Layout from "graphology-layout-forceatlas2/worker";
 import { inferSettings } from "graphology-layout-forceatlas2"
+import { Network } from "./types/pywebview";
+
+
+let networkCache: Record<number, Network> = {}
 
 
 // Initialize these here so we can use them later
 let sigmaInstanceLeft: Sigma;
 let sigmaInstanceRight: Sigma;
+
+let layoutLeft: FA2Layout | null = null;
+let layoutRight: FA2Layout | null = null;
 
 
 /**
@@ -46,17 +53,22 @@ function initializeSigmaInstances(leftContainerId: string, rightContainerId: str
   * @param distThreshold - The distance threshold required for two points to be considered close.
   * @param requriedRatio - The required ratio of points to be within the distance threshold.
 */
-async function populateNetwork(
+async function _populateNetwork(
   graph: Graph,
   simStart: string,
   timeOffset: number,
-  // ensId: number,
   distThreshold: number,
   requriedRatio: number
 ): Promise<Record<string, number>> {
+  // Check if network is cached
+  let data: Network;
+  if (timeOffset in networkCache) {
+    data = networkCache[timeOffset];
+  } else {
+    data = await pywebview.api.get_networks(simStart, timeOffset, distThreshold, requriedRatio); 
+    networkCache[timeOffset] = data;
+  }
   
-  const data = await pywebview.api.get_networks(simStart, timeOffset, distThreshold, requriedRatio); 
-
   const links = Object.values(data.clusters).flat().map(d => ({...d}));
   const nodes = data.nodes.map(d => ({...d}))
   const weights = links.map(l => l.weight)
@@ -81,49 +93,92 @@ async function populateNetwork(
     });
   });
 
+  return data.node_clusters;
+}
+
+
+function startLayout(side: "left" | "right") {
+  const graph = side == "left" ? sigmaInstanceLeft.getGraph() : sigmaInstanceRight.getGraph();
+
   const sensibleSettings = inferSettings(graph);
   sensibleSettings.edgeWeightInfluence = 1;
   sensibleSettings.gravity = 1;
   const layout = new FA2Layout(graph, {settings: sensibleSettings})
   layout.start();
 
-  return data.node_clusters;
+  if (side == "left") { 
+    layoutLeft = layout;
+  } else {
+    layoutRight = layout;
+  }
 }
 
 
 /**
   * Initialized the networks once pywebview is ready.
 */
-export async function initNetworks(): Promise<Record<string, number>[]> {
+export function initNetworks() {
   initializeSigmaInstances("left-network-container", "right-network-container");
-  const nodeClustersLeft = await populateNetwork(sigmaInstanceLeft.getGraph(), "2024101900", 0, 50, 0.05);
-  const nodeClustersRight = await populateNetwork(sigmaInstanceRight.getGraph(), "2024101900", 3, 50, 0.05);
-
-  return [nodeClustersLeft, nodeClustersRight];
 }
 
 
-export async function populateNetworks(
-  timeOffset: number,
-  distThreshold: number,
-  requiredRatio: number,
-): Promise<Record<string, number>[]> {
-  sigmaInstanceLeft.getGraph().clear();
-  sigmaInstanceLeft.setGraph(sigmaInstanceRight.getGraph());
-  return []
+export async function populateNetwork(side: "left" | "right", simStart: string, timeOffset: number, distThreshold: number, requiredRatio: number): Promise<Record<string, number>> {
 
-  // sigmaInstanceLeft.getGraph().clear();
-  // sigmaInstanceRight.getGraph().clear();
-  //
-  // const nodeClustersLeft = 
-  //   await populateNetwork(sigmaInstanceLeft.getGraph(), "2024101900", timeOffset, distThreshold, requiredRatio);
-  //
-  // const nextTimeOffset = timeOffset < 72 ? timeOffset + 3 : timeOffset + 6;
-  // const nodeClustersRight =
-  //   await populateNetwork(sigmaInstanceRight.getGraph(), "2024101900", nextTimeOffset, distThreshold, requiredRatio);
-  //
-  // sigmaInstanceLeft.refresh();
-  // sigmaInstanceRight.refresh();
-  //
-  // return [nodeClustersLeft, nodeClustersRight];
+  if (side === "left") {
+    sigmaInstanceLeft.getGraph().clear();
+    if (layoutLeft) { layoutLeft.kill(); }
+    const nodeClustersLeft = await _populateNetwork(sigmaInstanceLeft.getGraph(), simStart, timeOffset, distThreshold, requiredRatio);
+    startLayout(side);
+
+    resetCamera(sigmaInstanceLeft.getCamera());
+    sigmaInstanceLeft.refresh();
+
+    return nodeClustersLeft;
+  } else {
+    sigmaInstanceRight.getGraph().clear();
+    if (layoutRight) { layoutRight.kill(); }
+    const nodeClustersRight = await _populateNetwork(sigmaInstanceRight.getGraph(), simStart, timeOffset, distThreshold, requiredRatio);
+    startLayout(side);
+
+    resetCamera(sigmaInstanceRight.getCamera());
+    sigmaInstanceRight.refresh();
+
+    return nodeClustersRight;
+  }
+}
+
+
+function resetCamera(camera: Camera) {
+  camera.x = 0.5;
+  camera.y = 0.5;
+  camera.ratio = 1;
+}
+
+
+export function resetCameras() {
+  resetCamera(sigmaInstanceLeft.getCamera());
+  resetCamera(sigmaInstanceRight.getCamera());
+}
+
+
+export function resetLayouts() {
+  if (layoutLeft) { layoutLeft.kill() }
+  if (layoutRight) { layoutRight.kill() }
+
+  const graphLeft = sigmaInstanceLeft.getGraph();
+  graphLeft.forEachNode(function(n) {
+    graphLeft.setNodeAttribute(n, "x", Math.random());
+    graphLeft.setNodeAttribute(n, "y", Math.random());
+  })
+  sigmaInstanceLeft.refresh();
+
+  const graphRight = sigmaInstanceRight.getGraph();
+  graphRight.forEachNode(function(n) {
+    graphRight.setNodeAttribute(n, "x", Math.random());
+    graphRight.setNodeAttribute(n, "y", Math.random());
+  })
+  sigmaInstanceRight.refresh();
+
+  startLayout("left");
+  startLayout("right");
 }

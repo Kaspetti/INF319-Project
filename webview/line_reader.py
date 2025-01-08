@@ -153,6 +153,53 @@ def get_all_lines_in_ens(
     return all_lines
 
 
+def get_all_lines(start: str, line_type: Literal["mta", "jet"]) -> dict[int, list[Line]]:
+    lines_at_time = {}
+    t = 0
+    while t <= 240:
+        lines_at_time[t] = []
+        if t < 72:
+            t += 3
+        else:
+            t += 6
+
+    start_time = np.datetime64(
+        f"{start[0:4]}-{start[4:6]}-{start[6:8]}T{start[8:10]}:00:00"
+    )
+
+    for i in range(50):
+        print(i)
+        base_path = f"./data/{line_type}/{start}/"
+        file_path = f"ec.ens_{i:02d}.{start}.sfc.mta.nc"
+
+        if line_type == "jet":
+            file_path = f"ec.ens_{i:02d}.{start}.pv2000.jetaxis.nc"
+        full_path = base_path + file_path
+
+        ds = xr.open_dataset(full_path)
+        lines = list(ds.groupby(["line_id", "date"]))
+        for _, line in lines:
+            t = int((line.date.values[0] - start_time) / np.timedelta64(1, "h"))
+            coords = [
+                CoordGeo(lon, lat)
+                for lon, lat in zip(line.longitude.values, line.latitude.values)
+            ]
+
+            if max(line.longitude.values) - min(line.longitude.values) > 180:
+                coords = dateline_fix(coords)
+
+            centroid = Coord3D(0, 0, 0)
+            for coord in coords:
+                coord_3D = coord.to_3D()
+                centroid += coord_3D
+
+            centroid_geo = (centroid * (1/len(coords))).to_lon_lat()
+            lines_at_time[t].append(Line(id=f"{t}|{line.line_id.values[0]}", coords=coords, centroid=centroid_geo))
+            ds.close()
+
+    return lines_at_time
+
+
 def dateline_fix(coords: list[CoordGeo]) -> list[CoordGeo]:
     """Shifts a list of coordinates by 360 degrees longitude.
 
@@ -164,3 +211,7 @@ def dateline_fix(coords: list[CoordGeo]) -> list[CoordGeo]:
             coords[i] = CoordGeo(coord.lon + 360, coord.lat)
 
     return coords
+
+
+if __name__ == "__main__":
+    get_all_lines("2024101900", "jet")

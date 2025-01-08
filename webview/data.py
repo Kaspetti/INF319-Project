@@ -1,5 +1,5 @@
 import math
-from typing import Literal, NamedTuple, TypedDict
+from typing import TypedDict
 from dataclasses import dataclass
 import cProfile
 
@@ -10,7 +10,7 @@ from line_reader import Line, get_all_lines_in_ens
 
 import numpy as np
 from scipy.spatial.distance import cdist
-from alive_progress import alive_it # type: ignore
+# from alive_progress import alive_it
 import networkx as nx
 
 from multiscale import IcoPoint, multiscale
@@ -40,28 +40,6 @@ class Network(TypedDict):
 
 
 EARTH_RADIUS = 6371
-
-
-def to_xyz(v: list[float]):
-    '''
-    Converts a [lat, lon] coordinate into 3D coordinates ([x, y ,z]) on the
-    unit sphere
-
-    Parameters
-    ----------
-    v : the [lat, lon] coordinate to convert
-
-    Returns
-    -------
-    [x, y, z] : the coordinate represented as [x, y, z] coordinates
-    on the unit sphere
-    '''
-
-    x = math.cos(math.radians(v[0])) * math.cos(math.radians(v[1]))
-    y = math.cos(math.radians(v[0])) * math.sin(math.radians(v[1]))
-    z = math.sin(math.radians(v[0]))
-
-    return [x, y, z]
 
 
 def distance(c1: Coord3D, c2: Coord3D):
@@ -124,10 +102,6 @@ def get_distances(line: Line, lines: list[Line], max_dist: float) -> NDArray[np.
 
     return np.array(dists)
 
-    # ico_points_ms = {}
-    # subdivided_edges: dict[tuple[int, int], int] = {}
-    # line_points_ms: dict[str, dict[int, dict[int, tuple[int, float]]]] = {}
-
 def get_close_lines(
         line: Line,
         lines: list[Line],
@@ -181,8 +155,8 @@ def generate_network(
 
     connections: set[Connection] = set()
 
-    bar = alive_it(lines, title="Generating network")
-    for line in bar:
+    # bar = alive_it(lines, title="Generating network")
+    for line in lines:
 
         close_lines = get_close_lines(line, lines, ico_points_ms, line_points_ms, max_dist * 10)
         dists = get_distances(line, close_lines, max_dist)

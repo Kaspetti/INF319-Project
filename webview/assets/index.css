@@ -29,7 +29,7 @@ body {
   border-bottom-style: dashed;
 }
 
-.container-header {
+.container-heading {
   position: absolute;
   margin: 0px;
   background: rgba(255, 255, 255, 0.2); /* Semi-transparent background */

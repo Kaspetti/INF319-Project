@@ -43,4 +43,4 @@ type Line = {
   centroid: CoordGeo;
 }
 
-export {};
+export { Network, Line };
