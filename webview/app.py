@@ -1,6 +1,6 @@
 import sys
 
-from line_reader import Line, get_all_lines_at_time
+from line_reader import Line, get_all_lines_at_time, get_all_lines
 from multiscale import multiscale
 from data import generate_network, Network
 
@@ -32,16 +32,7 @@ class Api:
 
 if __name__ == '__main__':
     print("Getting lines")
-    lines_at_time: dict[int, list[Line]] = {}
-    t = 0
-    while t <= 240:
-        lines_at_time[t] = get_all_lines_at_time("2024101900", t, "jet")
-
-        if t < 72:
-            t += 3
-        else:
-            t += 6
-
+    lines_at_time = get_all_lines("2024101900", "jet")
 
     api = Api(lines_at_time)
     _ = webview.create_window('INF319', 'assets/index.html', js_api=api, min_size=(1280, 720))

@@ -1,4 +1,6 @@
 from typing import Literal
+from concurrent.futures import ProcessPoolExecutor
+from functools import partial
 
 from coords import Coord3D, CoordGeo
 
@@ -153,30 +155,22 @@ def get_all_lines_in_ens(
     return all_lines
 
 
-def get_all_lines(start: str, line_type: Literal["mta", "jet"]) -> dict[int, list[Line]]:
-    lines_at_time = {}
-    t = 0
-    while t <= 240:
-        lines_at_time[t] = []
-        if t < 72:
-            t += 3
-        else:
-            t += 6
+def process_single_file(ens_id: int, start: str, line_type: Literal["mta", "jet"]):
+    times = [t for t in range(0, 73, 3)] + [t for t in range(78, 241, 6)]
+    lines_at_time = {t: [] for t in times}
 
     start_time = np.datetime64(
         f"{start[0:4]}-{start[4:6]}-{start[6:8]}T{start[8:10]}:00:00"
     )
 
-    for i in range(50):
-        print(i)
-        base_path = f"./data/{line_type}/{start}/"
-        file_path = f"ec.ens_{i:02d}.{start}.sfc.mta.nc"
+    base_path = f"./data/{line_type}/{start}/"
+    file_path = f"ec.ens_{ens_id:02d}.{start}.sfc.mta.nc"
 
-        if line_type == "jet":
-            file_path = f"ec.ens_{i:02d}.{start}.pv2000.jetaxis.nc"
-        full_path = base_path + file_path
+    if line_type == "jet":
+        file_path = f"ec.ens_{ens_id:02d}.{start}.pv2000.jetaxis.nc"
+    full_path = base_path + file_path
 
-        ds = xr.open_dataset(full_path)
+    with xr.open_dataset(full_path) as ds:
         lines = list(ds.groupby(["line_id", "date"]))
         for _, line in lines:
             t = int((line.date.values[0] - start_time) / np.timedelta64(1, "h"))
@@ -194,10 +188,27 @@ def get_all_lines(start: str, line_type: Literal["mta", "jet"]) -> dict[int, lis
                 centroid += coord_3D
 
             centroid_geo = (centroid * (1/len(coords))).to_lon_lat()
-            lines_at_time[t].append(Line(id=f"{t}|{line.line_id.values[0]}", coords=coords, centroid=centroid_geo))
-            ds.close()
+            lines_at_time[t].append(Line(id=f"{ens_id}|{line.line_id.values[0]}", coords=coords, centroid=centroid_geo))
 
     return lines_at_time
+
+
+def get_all_lines(start: str, line_type: Literal["mta", "jet"]) -> dict[int, list[Line]]:
+    with ProcessPoolExecutor(max_workers=8) as executor:
+        process_func = partial(
+            process_single_file,
+            start=start,
+            line_type=line_type,
+        )
+        process_dicts = list(executor.map(process_func, range(50)))
+
+    lines_at_time = process_dicts[0]
+    for process_dict in process_dicts[1:]:
+        for t in lines_at_time.keys():
+            lines_at_time[t] += process_dict[t]
+
+    return lines_at_time
+
 
 
 def dateline_fix(coords: list[CoordGeo]) -> list[CoordGeo]:
@@ -214,4 +225,6 @@ def dateline_fix(coords: list[CoordGeo]) -> list[CoordGeo]:
 
 
 if __name__ == "__main__":
-    get_all_lines("2024101900", "jet")
+    # print(get_all_lines("2024101900", "jet"))
+    # print(process_single_file("2024101900", "jet", 0)[0])
+    print(len(get_all_lines("2024101900", "jet")[0]))

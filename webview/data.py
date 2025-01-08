@@ -6,7 +6,7 @@ import cProfile
 from numpy._typing import NDArray
 
 from coords import Coord3D, CoordGeo
-from line_reader import Line, get_all_lines_in_ens
+from line_reader import Line, get_all_lines_in_ens, get_all_lines
 
 import numpy as np
 from scipy.spatial.distance import cdist
@@ -216,7 +216,7 @@ def generate_network(
 
 
 if __name__ == "__main__":
-    lines = get_all_lines_in_ens("2024101900", 0, "jet")
-    ico_points_ms, line_points_ms = multiscale(lines, 2)
-    # generate_network(lines, ico_points_ms, line_points_ms, 50, 0.05)
-    cProfile.run("generate_network(lines, ico_points_ms, line_points_ms, 50, 0.05)")
+    lines = get_all_lines("2024101900", "jet")
+    ico_points_ms, line_points_ms = multiscale(lines[0], 2)
+    generate_network(lines[0], ico_points_ms, line_points_ms, 50, 0.05)
+    # cProfile.run("generate_network(lines, ico_points_ms, line_points_ms, 50, 0.05)")
