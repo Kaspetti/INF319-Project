@@ -90,3 +90,9 @@ export async function populateMap(side: "left" | "right", simStart: string, time
     await _populateMap(lineLayerRight, nodeClusters, simStart, timeOffset);
   }
 }
+
+
+export async function clearMaps() {
+  lineLayerLeft.clearLayers();
+  lineLayerRight.clearLayers();
+}

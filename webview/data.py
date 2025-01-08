@@ -1,7 +1,6 @@
 import math
 from typing import TypedDict
 from dataclasses import dataclass
-import cProfile
 
 from numpy._typing import NDArray
 

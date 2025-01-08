@@ -1,4 +1,4 @@
-import { initMaps, populateMap } from "./map";
+import { clearMaps, initMaps, populateMap } from "./map";
 import { initNetworks, populateNetwork, resetCameras, resetLayouts } from "./network";
 
 
@@ -25,6 +25,8 @@ async function init() {
 
 
 async function populateGraphs() {
+  clearMaps();
+
   toggleInputs(false);
   leftNetworkHeading.textContent = "Loading..."
   rightNetworkHeading.textContent = "Loading..."
@@ -57,7 +59,7 @@ function setupPage() {
   })
 
   nextButton.addEventListener("click", function() {
-    if (currentTimeOffset < 240) {
+    if (currentTimeOffset < 234) {
       currentTimeOffset += currentTimeOffset < 72 ? 3 : 6;
     }
 
@@ -78,8 +80,18 @@ function setupPage() {
 
 
 function toggleInputs(on: boolean) {
-  previousButton.disabled = !on;
-  nextButton.disabled = !on;
+  if (currentTimeOffset <= 0) {
+    previousButton.disabled = true;
+  } else {
+    previousButton.disabled = !on;
+  }
+
+  if (currentTimeOffset >= 234) {
+    nextButton.disabled = true;
+  } else {
+    nextButton.disabled = !on;
+  }
+
   resetViewsButton.disabled = !on;
   resetLayoutsButton.disabled = !on;
 }
