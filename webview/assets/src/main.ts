@@ -1,5 +1,8 @@
+import { getContingencyTable } from "./contingencyTable";
 import { clearMaps, initMaps, populateMap } from "./map";
 import { initNetworks, populateNetwork, resetCameras, resetLayouts } from "./network";
+
+import './styles/main.css';
 
 
 let previousButton: HTMLButtonElement;
@@ -17,6 +20,7 @@ let currentTimeOffset = 0;
 async function init() {
   setupPage();
 
+  await getContingencyTable();
   initNetworks();
   initMaps();
 

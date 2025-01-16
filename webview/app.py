@@ -1,8 +1,11 @@
 import sys
 
+from numpy.typing import NDArray
+
 from line_reader import Line, get_all_lines
 from multiscale import multiscale
 from data import generate_network, Network
+from tracking import create_clustermap
 
 import webview
 
@@ -27,6 +30,10 @@ class Api:
         lines_dict = [line.to_dict() for line in lines]
 
         return lines_dict
+
+    def get_contingency_table(self, sim_start: str, time_offset: int):
+        contingency = create_clustermap(sim_start, time_offset, "jet")
+        return contingency
 
 
 if __name__ == '__main__':

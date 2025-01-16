@@ -2,25 +2,30 @@
 <html>
   <head>
     <title>INF319</title>
-    <link rel="stylesheet" href="index.css">
   </head>
 
-  <body>
-    <div id="vis-containers">
-      <div id="left-network-container" class="vis-container top-container">
-        <h1 id="left-network-heading" class="container-heading">2024101900 +0h</h1>
-      </div>    
-      <div id="right-network-container" class="vis-container top-container">
-        <h1 id="right-network-heading" class="container-heading">2024101900 +3h</h1>
-      </div>    
-      <div id="left-map-container" class="vis-container bottom-container"></div>    
-      <div id="right-map-container" class="vis-container bottom-container"></div>    
+  <body class="bg-gray-900 dark:bg-gray-200">
+    <div class="flex flex-col h-screen">
+      <div id="vis-containers" class="grid grid-cols-2 gap-x-4 p-4 pb-0 h-5/6">
+        <div id="left-network-container" class="border-2 border-gray-600 relative bg-gray-800" style="border-bottom-style: dashed;">
+          <h1 id="left-network-heading" class="absolute text-3xl bg-gray-800/50 text-gray-200 p-2">2024101900 +0h</h1>
+        </div>    
+        <div id="right-network-container" class="border-2 border-gray-600 relative bg-gray-800" style="border-bottom-style: dashed;">
+          <h1 id="right-network-heading" class="absolute text-3xl bg-gray-800 text-gray-200 p-2">2024101900 +3h</h1>
+        </div>    
+        <div id="left-map-container" class="border-2 border-gray-600 border-t-0 bg-gray-800"></div>    
+        <div id="right-map-container" class="border-2 border-gray-600 border-t-0 bg-gray-800"></div>    
+      </div>
+      <div class="flex-1 flex justify-center items-center h-1/6">
+        <div class="grid grid-cols-2 gap-2 w-72">
+          <button id="previous" class="px-4 py-2 bg-gray-700 text-gray-200 rounded hover:bg-gray-600 transition-colors">Previous</button>
+          <button id="next" class="px-4 py-2 bg-gray-700 text-gray-200 rounded hover:bg-gray-600 transition-colors">Next</button>
+          <button id="reset-views-button" class="px-4 py-2 bg-gray-700 text-gray-200 rounded hover:bg-gray-600 transition-colors">Reset Views</button>
+          <button id="reset-layouts-button" class="px-4 py-2 bg-gray-700 text-gray-200 rounded hover:bg-gray-600 transition-colors">Reset Layouts</button>
+        </div>
+      </div>
     </div>
-    <button id="previous">Previous</button>
-    <button id="next">Next</button>
-    <br>
-    <button id="reset-views-button">Reset Views</button>
-    <button id="reset-layouts-button">Reset Layouts</button>
+    <div id="contingency-table" class="h-96 flex justify-center items-center relative"></div>
 
     <script src="./dist/bundle.js"></script>
   </body>

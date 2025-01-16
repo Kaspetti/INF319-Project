@@ -75,10 +75,10 @@ async function _populateNetwork(
 
   const colorScale = scaleLinear<string>()
     .domain([Math.min(...weights), Math.max(...weights)])
-    .range(["#ff0000", "#0000ff"]);
+    .range(["#ff1a1a", "#1a1aff"]);
 
   nodes.forEach(n => {
-    graph.addNode(n.id, {size: 3, color: "orange", label: n.id, x: Math.random(), y: Math.random()});
+    graph.addNode(n.id, {size: 3, color: "#ff9900", label: n.id, x: Math.random(), y: Math.random()});
   });
 
   links.forEach(l => {

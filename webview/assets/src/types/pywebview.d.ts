@@ -11,7 +11,12 @@ declare global {
       get_lines: (
         simStart: string,
         timeOffset: number
-      ) => Promise<Line[]>
+      ) => Promise<Line[]>,
+
+      get_contingency_table: (
+        simStart: string,
+        timeOffset: number
+      ) => Promise<number[][]>
     }
   };
 }
