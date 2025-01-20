@@ -21,8 +21,11 @@ class Api:
     # eg. "2024101900+00+50+0.05" = "202410190000500.05"
     loaded_networks: dict[str, Network]
 
+    loaded_contingency: dict[str, list[list[int]]]
+
     network_lock: BaseFileLock
     lines_lock: BaseFileLock
+    contingency_lock: BaseFileLock
 
     def __init__(self):
         """Initializes the api
@@ -39,10 +42,17 @@ class Api:
             with open("networks.json", "r") as f:
                 self.loaded_networks = json.load(f)
 
+        if not os.path.exists("contingency.json"):
+            self.loaded_contingency = {}
+        else:
+            with open("contingency.json", "r") as f:
+                self.loaded_contingency = json.load(f)
+
         self.loaded_lines = {}
         
         self.network_lock = FileLock("networks.json.lock")
         self.lines_lock = FileLock("lines.json.lock")
+        self.contingency_lock = FileLock("contingency.json.lock")
 
 
     def get_network(self, sim_start: str, time_offset: int, dist_threshold: int, required_ratio: float, line_type: Literal["mta", "jet"]) -> Network:
@@ -99,17 +109,28 @@ class Api:
         return lines_dict
 
     def get_contingency_table(self, sim_start: str, time_offset: int, dist_threshold: int, required_ratio: float, line_type: Literal["jet", "mta"]):
+        t1 = time_offset + (6 if time_offset > 72 else 3)
+        if str(time_offset)+str(t1) in self.loaded_contingency:
+            return self.loaded_contingency[str(time_offset)+str(t1)]
+
         network_key = sim_start + str(time_offset) + str(dist_threshold) + str(required_ratio) + line_type
         network_t0 = self.loaded_networks[network_key]
 
-        network_key = sim_start + str(time_offset + (6 if time_offset > 72 else 3)) + str(dist_threshold) + str(required_ratio) + line_type
+        network_key = sim_start + str(t1) + str(dist_threshold) + str(required_ratio) + line_type
         network_t1 = self.loaded_networks[network_key]
 
         lines_key = sim_start + line_type
         lines_t0 = self.loaded_lines[lines_key][time_offset]
-        lines_t1 = self.loaded_lines[lines_key][time_offset + (6 if time_offset > 72 else 3)]
+        lines_t1 = self.loaded_lines[lines_key][t1]
 
         contingency = create_clustermap(lines_t0, lines_t1, network_t0, network_t1)
+
+        self.loaded_contingency[str(time_offset)+str(t1)] = contingency
+
+        with self.contingency_lock:
+            with open("contingency.json", "w+") as f:
+                json.dump(self.loaded_contingency, f)
+
         return contingency
 
 
