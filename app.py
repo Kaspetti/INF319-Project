@@ -64,7 +64,7 @@ class Api:
         line_type : the type of line being analyzed (jet or mta)
         """
 
-        network_key = sim_start + str(time_offset) + str(dist_threshold) + str(required_ratio)
+        network_key = sim_start + str(time_offset) + str(dist_threshold) + str(required_ratio) + line_type
         if network_key in self.loaded_networks:
             return self.loaded_networks[network_key]
 
@@ -98,8 +98,18 @@ class Api:
 
         return lines_dict
 
-    def get_contingency_table(self, sim_start: str, time_offset: int):
-        contingency = create_clustermap(sim_start, time_offset, "jet")
+    def get_contingency_table(self, sim_start: str, time_offset: int, dist_threshold: int, required_ratio: float, line_type: Literal["jet", "mta"]):
+        network_key = sim_start + str(time_offset) + str(dist_threshold) + str(required_ratio) + line_type
+        network_t0 = self.loaded_networks[network_key]
+
+        network_key = sim_start + str(time_offset + (6 if time_offset > 72 else 3)) + str(dist_threshold) + str(required_ratio) + line_type
+        network_t1 = self.loaded_networks[network_key]
+
+        lines_key = sim_start + line_type
+        lines_t0 = self.loaded_lines[lines_key][time_offset]
+        lines_t1 = self.loaded_lines[lines_key][time_offset + (6 if time_offset > 72 else 3)]
+
+        contingency = create_clustermap(lines_t0, lines_t1, network_t0, network_t1)
         return contingency
 
 

@@ -20,7 +20,6 @@ let currentTimeOffset = 0;
 async function init() {
   setupPage();
 
-  // await getContingencyTable();
   initNetworks();
   initMaps();
 
@@ -44,6 +43,8 @@ async function populateGraphs() {
         .then((nodeClusters) => populateMap("right", "2024101900", currentTimeOffset + (currentTimeOffset < 72 ? 3 : 6), "jet", nodeClusters))
         .then(() => rightNetworkHeading.textContent = `2024101900 +${currentTimeOffset + (currentTimeOffset < 72 ? 3 : 6)}h`)
   ]);
+
+  await getContingencyTable("2024101900", currentTimeOffset, 50, 0.05, "jet");
   toggleInputs(true);
 }
 

@@ -17,7 +17,10 @@ declare global {
 
       get_contingency_table: (
         simStart: string,
-        timeOffset: number
+        timeOffset: number,
+        distThreshold: number, 
+        requiredRatio: number,
+        lineType: "jet" | "mta"
       ) => Promise<number[][]>
     }
   };

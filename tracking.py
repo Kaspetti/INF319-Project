@@ -1,7 +1,7 @@
 from typing import Literal, TypedDict
 
-from line_reader import get_all_lines_at_time
-from data import generate_network
+from line_reader import Line, get_all_lines_at_time
+from data import Network, generate_network
 from multiscale import multiscale
 from track_lines_devel import add_length_col, track_lines
 
@@ -15,11 +15,12 @@ class Row(TypedDict):
     longitude: float
 
 
-def create_clustermap(simstart: str, time_offset: int, line_type: Literal["mta", "jet"]) -> list[list[int]]:
+# def create_clustermap(simstart: str, time_offset: int, line_type: Literal["mta", "jet"]) -> list[list[int]]:
+def create_clustermap(lines_t0: list[Line], lines_t1: list[Line], network_t0: Network, network_t1: Network) -> list[list[int]]:
     # Generate clusters at t0
-    lines_t0 = get_all_lines_at_time(simstart, time_offset, line_type)
-    ico_points_ms_t0, line_points_ms_t0 = multiscale(lines_t0, 2)
-    network_t0 = generate_network(lines_t0, ico_points_ms_t0, line_points_ms_t0, 50, 0.05)
+    # lines_t0 = get_all_lines_at_time(simstart, time_offset, line_type)
+    # ico_points_ms_t0, line_points_ms_t0 = multiscale(lines_t0, 2)
+    # network_t0 = generate_network(lines_t0, ico_points_ms_t0, line_points_ms_t0, 50, 0.05)
 
     rows: list[Row] = []
     for line in lines_t0:
@@ -33,9 +34,9 @@ def create_clustermap(simstart: str, time_offset: int, line_type: Literal["mta",
     add_length_col(df0)
 
     # Generate clusters at t1
-    lines_t1 = get_all_lines_at_time(simstart, time_offset + (3 if time_offset < 72 else 6), line_type)
-    ico_points_ms_t1, line_points_ms_t1 = multiscale(lines_t1, 2)
-    network_t1 = generate_network(lines_t1, ico_points_ms_t1, line_points_ms_t1, 50, 0.05)
+    # lines_t1 = get_all_lines_at_time(simstart, time_offset + (3 if time_offset < 72 else 6), line_type)
+    # ico_points_ms_t1, line_points_ms_t1 = multiscale(lines_t1, 2)
+    # network_t1 = generate_network(lines_t1, ico_points_ms_t1, line_points_ms_t1, 50, 0.05)
 
     rows = []
     for line in lines_t1:

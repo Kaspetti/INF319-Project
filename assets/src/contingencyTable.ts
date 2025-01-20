@@ -8,8 +8,11 @@ interface ContingencyData {
 }
 
 
-export async function getContingencyTable() {
-  const rawData = await pywebview.api.get_contingency_table("2024101900", 0);
+export async function getContingencyTable(simStart: string, timeOffset: number, distThreshold: number, requiredRatio: number, lineType: "jet" | "mta") {
+  const container = document.querySelector("#contingency-table") as HTMLDivElement;
+  container.innerHTML = "";
+
+  const rawData = await pywebview.api.get_contingency_table(simStart, timeOffset, distThreshold, requiredRatio, lineType);
 
   let data: ContingencyData[] = []
   for (let i = 0; i < rawData.length; i++) {
@@ -21,7 +24,6 @@ export async function getContingencyTable() {
     }
   }
 
-  const container = document.querySelector("#contingency-table") as HTMLDivElement;
   const rect = container.getBoundingClientRect();
   const margin = { top: 30, right: 30, bottom: 30, left: 30 };
   const width = rect.width - margin.left - margin.right;
