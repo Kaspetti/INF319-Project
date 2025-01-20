@@ -9,3 +9,7 @@ package-lock.json
 node_modules/
 
 dist/
+
+*.lock
+
+networks.json

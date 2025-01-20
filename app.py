@@ -1,5 +1,6 @@
 import sys
-
+import json
+import os
 
 from line_reader import Line, get_all_lines
 from multiscale import multiscale
@@ -7,6 +8,7 @@ from data import generate_network, Network
 from tracking import create_clustermap
 
 import webview
+from filelock import BaseFileLock, FileLock
 
 
 class Api:
@@ -17,9 +19,18 @@ class Api:
     # eg. "2024101900+00+50+0.05" = "202410190000500.05"
     loaded_networks: dict[str, Network]
 
+    network_lock: BaseFileLock
+
     def __init__(self, lines_at_time: dict[int, list[Line]]):
         self.lines_at_time = lines_at_time
-        self.loaded_networks = {}
+
+        if not os.path.exists("networks.json"):
+            self.loaded_networks = {}
+        else:
+            with open("networks.json", "r") as f:
+                self.loaded_networks = json.load(f)
+
+        self.network_lock = FileLock("networks.json.lock")
 
     def get_networks(self, sim_start: str, time_offset: int, dist_threshold: int, required_ratio: float) -> Network:
         key = sim_start + str(time_offset) + str(dist_threshold) + str(required_ratio)
@@ -32,6 +43,10 @@ class Api:
         network = generate_network(lines, ico_points_ms, line_points_ms, dist_threshold, required_ratio)
 
         self.loaded_networks[key] = network
+
+        with self.network_lock:
+            with open("networks.json", "w+") as f:
+                json.dump(self.loaded_networks, f)
 
         return network
 
