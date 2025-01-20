@@ -4,10 +4,6 @@ import { scaleLinear } from "d3-scale"
 import { rgb } from "d3-color";
 import FA2Layout from "graphology-layout-forceatlas2/worker";
 import { inferSettings } from "graphology-layout-forceatlas2"
-import { Network } from "./types/pywebview";
-
-
-let networkCache: Record<number, Network> = {}
 
 
 // Initialize these here so we can use them later
@@ -60,14 +56,7 @@ async function _populateNetwork(
   distThreshold: number,
   requriedRatio: number
 ): Promise<Record<string, number>> {
-  // Check if network is cached
-  let data: Network;
-  if (timeOffset in networkCache) {
-    data = networkCache[timeOffset];
-  } else {
-    data = await pywebview.api.get_networks(simStart, timeOffset, distThreshold, requriedRatio); 
-    networkCache[timeOffset] = data;
-  }
+  const data = await pywebview.api.get_networks(simStart, timeOffset, distThreshold, requriedRatio); 
   
   const links = Object.values(data.clusters).flat().map(d => ({...d}));
   const nodes = data.nodes.map(d => ({...d}))

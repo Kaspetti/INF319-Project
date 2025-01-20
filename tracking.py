@@ -3,12 +3,10 @@ from typing import Literal, TypedDict
 from line_reader import get_all_lines_at_time
 from data import generate_network
 from multiscale import multiscale
-from track_lines_devel import add_length_col, track_lines   # type: ignore
+from track_lines_devel import add_length_col, track_lines
 
 import pandas as pd
-from alive_progress import alive_it # type: ignore
-import seaborn as sns
-import matplotlib.pyplot as plt
+from alive_progress import alive_it
 
 
 class Row(TypedDict):
@@ -17,7 +15,7 @@ class Row(TypedDict):
     longitude: float
 
 
-def create_clustermap(simstart: str, time_offset: int, line_type: Literal["mta", "jet"]):
+def create_clustermap(simstart: str, time_offset: int, line_type: Literal["mta", "jet"]) -> list[list[int]]:
     # Generate clusters at t0
     lines_t0 = get_all_lines_at_time(simstart, time_offset, line_type)
     ico_points_ms_t0, line_points_ms_t0 = multiscale(lines_t0, 2)
@@ -102,29 +100,6 @@ def create_clustermap(simstart: str, time_offset: int, line_type: Literal["mta",
     contingency.columns = new_columns
 
     return contingency.to_numpy().tolist();
-
-    # g = sns.clustermap(contingency,  # type: ignore
-    #                annot=len(contingency.index) < 30 and len(contingency.columns) < 30,
-    #                fmt='d',
-    #                cmap="YlOrRd",)
-    #
-    # g.ax_row_dendrogram.set_visible(False)  # type: ignore
-    # g.ax_col_dendrogram.set_visible(False)  # type: ignore
-    #
-    # g.ax_heatmap.set_xlabel('Clusters at t=3 hours')
-    # g.ax_heatmap.set_ylabel('Clusters at t=0 hours')
-    # g.ax_heatmap.xaxis.set_label_position('top')
-    # g.ax_heatmap.yaxis.set_label_position('right')
-    # g.ax_heatmap.yaxis.tick_left()
-    # g.ax_heatmap.xaxis.tick_bottom()
-    #
-    # plt.show()
-    #
-    # # buf = io.BytesIO()
-    # # g.figure.savefig(buf, format="png", bbox_inches="tight")
-    # # plt.close(g.figure)
-    # # buf.seek(0)
-    # # return buf
 
 
 if __name__ == "__main__":

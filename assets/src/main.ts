@@ -20,7 +20,7 @@ let currentTimeOffset = 0;
 async function init() {
   setupPage();
 
-  await getContingencyTable();
+  // await getContingencyTable();
   initNetworks();
   initMaps();
 
