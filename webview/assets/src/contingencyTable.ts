@@ -8,9 +8,6 @@ interface ContingencyData {
 }
 
 
-let container: HTMLDivElement;
-
-
 export async function getContingencyTable() {
   const rawData = await pywebview.api.get_contingency_table("2024101900", 0);
 
@@ -23,20 +20,19 @@ export async function getContingencyTable() {
       data.push({oldId: oldId, newId: newId, value: rawData[i][j]});
     }
   }
-  console.log(data);
 
-  container = document.querySelector("#contingency-table") as HTMLDivElement;
-  let margin = {top: 30, right: 30, bottom: 30, left: 30},
-    width = 450 - margin.left - margin.right,
-    height = 450 - margin.top - margin.bottom;
+  const container = document.querySelector("#contingency-table") as HTMLDivElement;
+  const rect = container.getBoundingClientRect();
+  const margin = { top: 30, right: 30, bottom: 30, left: 30 };
+  const width = rect.width - margin.left - margin.right;
+  const height = rect.height - margin.top - margin.bottom;
 
   let svg = d3.select("#contingency-table")
   .append("svg")
-  .attr("width", width + margin.left + margin.right)
-  .attr("height", height + margin.top + margin.bottom)
+  .attr("width", "100%")
+  .attr("viewBox", [0, 0, width, height])
   .append("g")
-  .attr("transform",
-        "translate(" + margin.left + "," + margin.top + ")");
+  .attr("transform", `translate(${margin.left},${margin.top})`);
 
   let t0: string[] = [];
   for (let i = -1; i < rawData[0].length - 2; i++) {
