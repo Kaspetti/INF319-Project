@@ -35,16 +35,15 @@ async function populateGraphs() {
   leftNetworkHeading.textContent = "Loading..."
   rightNetworkHeading.textContent = "Loading..."
 
-  await Promise.all([
-      populateNetwork("left", "2024101900", currentTimeOffset, 50, 0.05)
-        .then((nodeClusters) => populateMap("left", "2024101900", currentTimeOffset, nodeClusters))
+    await Promise.all([
+      populateNetwork("left", "2024101900", currentTimeOffset, 50, 0.05, "jet")
+        .then((nodeClusters) => populateMap("left", "2024101900", currentTimeOffset, "jet", nodeClusters))
         .then(() => leftNetworkHeading.textContent = `2024101900 +${currentTimeOffset}h`),
       
-      populateNetwork("right", "2024101900", currentTimeOffset + (currentTimeOffset < 72 ? 3 : 6), 50, 0.05)
-        .then((nodeClusters) => populateMap("right", "2024101900", currentTimeOffset + (currentTimeOffset < 72 ? 3 : 6), nodeClusters))
+      populateNetwork("right", "2024101900", currentTimeOffset + (currentTimeOffset < 72 ? 3 : 6), 50, 0.05, "jet")
+        .then((nodeClusters) => populateMap("right", "2024101900", currentTimeOffset + (currentTimeOffset < 72 ? 3 : 6), "jet", nodeClusters))
         .then(() => rightNetworkHeading.textContent = `2024101900 +${currentTimeOffset + (currentTimeOffset < 72 ? 3 : 6)}h`)
-    ]);
-
+  ]);
   toggleInputs(true);
 }
 

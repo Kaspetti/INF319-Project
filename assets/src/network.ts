@@ -54,9 +54,10 @@ async function _populateNetwork(
   simStart: string,
   timeOffset: number,
   distThreshold: number,
-  requriedRatio: number
+  requriedRatio: number,
+  lineType: "jet" | "mta"
 ): Promise<Record<string, number>> {
-  const data = await pywebview.api.get_networks(simStart, timeOffset, distThreshold, requriedRatio); 
+  const data = await pywebview.api.get_network(simStart, timeOffset, distThreshold, requriedRatio, lineType); 
   
   const links = Object.values(data.clusters).flat().map(d => ({...d}));
   const nodes = data.nodes.map(d => ({...d}))
@@ -111,12 +112,19 @@ export function initNetworks() {
 }
 
 
-export async function populateNetwork(side: "left" | "right", simStart: string, timeOffset: number, distThreshold: number, requiredRatio: number): Promise<Record<string, number>> {
+export async function populateNetwork(
+  side: "left" | "right",
+  simStart: string,
+  timeOffset: number,
+  distThreshold: number,
+  requiredRatio: number,
+  lineType: "jet" | "mta"
+): Promise<Record<string, number>> {
 
   if (side === "left") {
     sigmaInstanceLeft.getGraph().clear();
     if (layoutLeft) { layoutLeft.kill(); }
-    const nodeClustersLeft = await _populateNetwork(sigmaInstanceLeft.getGraph(), simStart, timeOffset, distThreshold, requiredRatio);
+    const nodeClustersLeft = await _populateNetwork(sigmaInstanceLeft.getGraph(), simStart, timeOffset, distThreshold, requiredRatio, lineType);
     startLayout(side);
 
     resetCamera(sigmaInstanceLeft.getCamera());
@@ -126,7 +134,7 @@ export async function populateNetwork(side: "left" | "right", simStart: string, 
   } else {
     sigmaInstanceRight.getGraph().clear();
     if (layoutRight) { layoutRight.kill(); }
-    const nodeClustersRight = await _populateNetwork(sigmaInstanceRight.getGraph(), simStart, timeOffset, distThreshold, requiredRatio);
+    const nodeClustersRight = await _populateNetwork(sigmaInstanceRight.getGraph(), simStart, timeOffset, distThreshold, requiredRatio, lineType);
     startLayout(side);
 
     resetCamera(sigmaInstanceRight.getCamera());

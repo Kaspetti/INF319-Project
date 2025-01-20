@@ -1,16 +1,18 @@
 declare global {
   const pywebview: {
     api: {
-      get_networks: (
+      get_network: (
         simStart: string, 
         timeOffset: number, 
         distThreshold: number, 
-        requiredRatio: number
+        requiredRatio: number,
+        lineType: "jet" | "mta"
       ) => Promise<Network>,
 
       get_lines: (
         simStart: string,
-        timeOffset: number
+        timeOffset: number,
+        lineType: "jet" | "mta"
       ) => Promise<Line[]>,
 
       get_contingency_table: (

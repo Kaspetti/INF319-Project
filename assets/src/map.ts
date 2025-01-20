@@ -2,10 +2,6 @@ import { scaleOrdinal } from "d3-scale";
 import { schemeCategory10 } from "d3-scale-chromatic"
 import * as L from "leaflet"
 import 'leaflet/dist/leaflet.css'
-import { Line } from "./types/pywebview";
-
-
-let lineCache: Record<number, Line[]> = {}
 
 
 let mapLeft: L.Map;
@@ -39,15 +35,10 @@ async function _populateMap(
   lineLayer: L.LayerGroup,
   nodeClusters: Record<string, number>,
   simStart: string,
-  timeOffset: number
+  timeOffset: number,
+  lineType: "jet" | "mta"
 ) {
-  let data: Line[];
-  if (timeOffset in lineCache) {
-    data = lineCache[timeOffset];
-  } else {
-    data = await pywebview.api.get_lines(simStart, timeOffset); 
-    lineCache[timeOffset] = data;
-  }
+  const data = await pywebview.api.get_lines(simStart, timeOffset, lineType); 
 
   const lineColormap = scaleOrdinal<number, string>(schemeCategory10)
     .domain([0, Math.max(...Object.values(nodeClusters))])
@@ -81,13 +72,13 @@ export function initMaps() {
 }
 
 
-export async function populateMap(side: "left" | "right", simStart: string, timeOffset: number, nodeClusters: Record<string, number>) {
+export async function populateMap(side: "left" | "right", simStart: string, timeOffset: number, lineType: "jet" | "mta", nodeClusters: Record<string, number>) {
   if (side === "left") {
     lineLayerLeft.clearLayers();
-    await _populateMap(lineLayerLeft, nodeClusters, simStart, timeOffset);
+    await _populateMap(lineLayerLeft, nodeClusters, simStart, timeOffset, lineType);
   } else {
     lineLayerRight.clearLayers();
-    await _populateMap(lineLayerRight, nodeClusters, simStart, timeOffset);
+    await _populateMap(lineLayerRight, nodeClusters, simStart, timeOffset, lineType);
   }
 }
 
