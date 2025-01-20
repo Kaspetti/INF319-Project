@@ -439,57 +439,54 @@ if __name__ == "__main__":
             geometry.append(LineString(coords))
             ids.append(id)
 
-        if time_offset > 12:
-            break
-
         if time_offset < 72:
             time_offset += 3
         else:
             time_offset += 6
 
-    # Create contingency table
-    all_ids = sorted(set(
-        list(df['old_id'].unique()) + 
-        list(df['line_id'].unique())
-    ))
-
-    contingency = pd.DataFrame(
-        0, 
-        index=all_ids,
-        columns=all_ids
-    )    
-    grouped = df.groupby(['date', 'old_id', 'line_id']).size()
-    
-    for (date, old_id, line_id), _ in grouped.items():  # type: ignore
-        contingency.loc[old_id, line_id] += 1
-
-    row_sums = contingency.sum(axis=1)
-    col_sums = contingency.sum(axis=0)
-    
-    filtered_contingency = contingency.loc[
-        row_sums > 1,  # Filter rows
-        col_sums > 1   # Filter columns
-    ]
-
-    plt.figure(figsize=(12, 10))
-    sns.heatmap(filtered_contingency, 
-                cmap='YlOrRd',
-                annot=False,
-                fmt='d', 
-                cbar_kws={'label': 'Number of Lines'},
-                square=True)
-    
-    plt.title('Line ID Transitions Heatmap')
-    plt.xlabel('New Line ID')
-    plt.ylabel('Old Line ID')
-    
-    # Rotate labels if there are many IDs
-    plt.xticks(rotation=45, ha='right')
-    plt.yticks(rotation=0)
-    
-    # Adjust layout to prevent label cutoff
-    plt.tight_layout()
-    plt.show()
+    # # Create contingency table
+    # all_ids = sorted(set(
+    #     list(df['old_id'].unique()) + 
+    #     list(df['line_id'].unique())
+    # ))
+    #
+    # contingency = pd.DataFrame(
+    #     0, 
+    #     index=all_ids,
+    #     columns=all_ids
+    # )    
+    # grouped = df.groupby(['date', 'old_id', 'line_id']).size()
+    # 
+    # for (date, old_id, line_id), _ in grouped.items():  # type: ignore
+    #     contingency.loc[old_id, line_id] += 1
+    #
+    # row_sums = contingency.sum(axis=1)
+    # col_sums = contingency.sum(axis=0)
+    # 
+    # filtered_contingency = contingency.loc[
+    #     row_sums > 1,  # Filter rows
+    #     col_sums > 1   # Filter columns
+    # ]
+    #
+    # plt.figure(figsize=(12, 10))
+    # sns.heatmap(filtered_contingency, 
+    #             cmap='YlOrRd',
+    #             annot=False,
+    #             fmt='d', 
+    #             cbar_kws={'label': 'Number of Lines'},
+    #             square=True)
+    # 
+    # plt.title('Line ID Transitions Heatmap')
+    # plt.xlabel('New Line ID')
+    # plt.ylabel('Old Line ID')
+    # 
+    # # Rotate labels if there are many IDs
+    # plt.xticks(rotation=45, ha='right')
+    # plt.yticks(rotation=0)
+    # 
+    # # Adjust layout to prevent label cutoff
+    # plt.tight_layout()
+    # plt.show()
 
 
     fig = plt.figure(figsize=(12, 8))
