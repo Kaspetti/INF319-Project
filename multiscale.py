@@ -10,7 +10,6 @@ from icosphere import icosphere
 from scipy.spatial import KDTree
 import numpy as np
 from numpy.typing import NDArray
-from alive_progress import alive_it
 
 @dataclass
 class IcoPoint:
@@ -91,8 +90,7 @@ def multiscale(lines: List[Line], subdivs: int):
 
     outside = 0
     outside_after_flip = 0
-    bar = alive_it(lines, title="Performing multiscale")
-    for line in bar:
+    for line in lines:
         line_points_ms[line.id] = {}
         for ms_level in range(0, subdivs+1):
             line_points_ms[line.id][ms_level] = {}
@@ -181,7 +179,7 @@ def multiscale(lines: List[Line], subdivs: int):
                     line_points_ms[line.id][ms_level][closest_idx[0]] = (i, dist)
 
 
-    print(f"{outside} points outside and needed flipping...")
-    print(f"{outside_after_flip} points still outside after flipping...")
+    # print(f"{outside} points outside and needed flipping...")
+    # print(f"{outside_after_flip} points still outside after flipping...")
 
     return ico_points_ms, line_points_ms

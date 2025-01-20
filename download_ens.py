@@ -20,7 +20,7 @@ def filename(x, d):
         return f"ec.ens_{x}.{d}.sfc.mta.nc"
 
 
-dates = ["2024101900"]
+dates = ["2024123000"]
 
 
 for date in dates:

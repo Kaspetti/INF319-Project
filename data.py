@@ -1,16 +1,15 @@
 import math
-from typing import Literal, NamedTuple, TypedDict
+from typing import TypedDict
 from dataclasses import dataclass
-import cProfile
 
 from numpy._typing import NDArray
 
 from coords import Coord3D, CoordGeo
-from line_reader import Line, get_all_lines_in_ens
+from line_reader import Line, get_all_lines_in_ens, get_all_lines
 
 import numpy as np
 from scipy.spatial.distance import cdist
-from alive_progress import alive_it # type: ignore
+# from alive_progress import alive_it
 import networkx as nx
 
 from multiscale import IcoPoint, multiscale
@@ -23,39 +22,23 @@ class Connection:
     weight: float
 
 
+class TypedConnection(TypedDict):
+    source: str
+    target: str
+    weight: float
+
+
 class Node(TypedDict):
     id: str
 
 
 class Network(TypedDict):
     nodes: list[Node]
-    clusters: dict[int, list[Connection]]
+    clusters: dict[int, list[TypedConnection]]
     node_clusters: dict[str, int]
 
 
 EARTH_RADIUS = 6371
-
-
-def to_xyz(v: list[float]):
-    '''
-    Converts a [lat, lon] coordinate into 3D coordinates ([x, y ,z]) on the
-    unit sphere
-
-    Parameters
-    ----------
-    v : the [lat, lon] coordinate to convert
-
-    Returns
-    -------
-    [x, y, z] : the coordinate represented as [x, y, z] coordinates
-    on the unit sphere
-    '''
-
-    x = math.cos(math.radians(v[0])) * math.cos(math.radians(v[1]))
-    y = math.cos(math.radians(v[0])) * math.sin(math.radians(v[1]))
-    z = math.sin(math.radians(v[0]))
-
-    return [x, y, z]
 
 
 def distance(c1: Coord3D, c2: Coord3D):
@@ -118,10 +101,6 @@ def get_distances(line: Line, lines: list[Line], max_dist: float) -> NDArray[np.
 
     return np.array(dists)
 
-    # ico_points_ms = {}
-    # subdivided_edges: dict[tuple[int, int], int] = {}
-    # line_points_ms: dict[str, dict[int, dict[int, tuple[int, float]]]] = {}
-
 def get_close_lines(
         line: Line,
         lines: list[Line],
@@ -175,8 +154,8 @@ def generate_network(
 
     connections: set[Connection] = set()
 
-    bar = alive_it(lines, title="Generating network")
-    for line in bar:
+    # bar = alive_it(lines, title="Generating network")
+    for line in lines:
 
         close_lines = get_close_lines(line, lines, ico_points_ms, line_points_ms, max_dist * 10)
         dists = get_distances(line, close_lines, max_dist)
@@ -194,7 +173,7 @@ def generate_network(
                                        target=close_lines[i].id,
                                        weight=ratio))
 
-    clusters: dict[int, list[Connection]] = {}
+    clusters: dict[int, list[TypedConnection]] = {}
     node_to_cluster: dict[str, int] = {}
 
     G: nx.Graph[str] = nx.Graph()
@@ -207,9 +186,24 @@ def generate_network(
 
     for i, cluster in enumerate(communities):   # type: ignore
         sub_graph = G.subgraph(cluster)
-        clusters[i] = [Connection(source=edge[0], target=edge[1], weight=edge[2]["weight"]) for edge in sub_graph.edges(data=True)]
+        clusters[i] = []
+
+        added_ens_members = {}
+        for edge in sub_graph.edges(data=True):
+            ens_id0, line_id0 = edge[0].split("|")
+            ens_id1, line_id1 = edge[1].split("|")
+            if (ens_id0 not in added_ens_members or added_ens_members[ens_id0] == line_id0) and (ens_id1 not in added_ens_members or added_ens_members[ens_id1] == line_id1):
+                clusters[i].append(TypedConnection(source=edge[0], target=edge[1], weight=edge[2]["weight"]))
+                added_ens_members[ens_id0] = line_id0
+                added_ens_members[ens_id1] = line_id1
+
+        # clusters[i] = [TypedConnection(source=edge[0], target=edge[1], weight=edge[2]["weight"]) for edge in sub_graph.edges(data=True)]
         for node in cluster:
-            node_to_cluster[node] = i
+            ens_id, line_id = node.split("|")
+            if ens_id in added_ens_members and added_ens_members[ens_id] == line_id:
+                node_to_cluster[node] = i
+            else:
+                node_to_cluster[node] = -1
 
     nodes: list[Node] = []
     for line in lines:
@@ -221,7 +215,7 @@ def generate_network(
 
 
 if __name__ == "__main__":
-    lines = get_all_lines_in_ens("2024101900", 0, "jet")
-    ico_points_ms, line_points_ms = multiscale(lines, 2)
-    # generate_network(lines, ico_points_ms, line_points_ms, 50, 0.05)
-    cProfile.run("generate_network(lines, ico_points_ms, line_points_ms, 50, 0.05)")
+    lines = get_all_lines("2024101900", "jet")
+    ico_points_ms, line_points_ms = multiscale(lines[0], 2)
+    generate_network(lines[0], ico_points_ms, line_points_ms, 50, 0.05)
+    # cProfile.run("generate_network(lines, ico_points_ms, line_points_ms, 50, 0.05)")

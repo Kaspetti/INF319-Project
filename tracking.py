@@ -1,4 +1,3 @@
-import io
 from typing import Literal, TypedDict
 
 from line_reader import get_all_lines_at_time
@@ -102,23 +101,31 @@ def create_clustermap(simstart: str, time_offset: int, line_type: Literal["mta",
     contingency.index = new_index   # type: ignore
     contingency.columns = new_columns
 
-    g = sns.clustermap(contingency,  # type: ignore
-                   annot=len(contingency.index) < 30 and len(contingency.columns) < 30,
-                   fmt='d',
-                   cmap="YlOrRd",)
+    return contingency.to_numpy().tolist();
 
-    g.ax_row_dendrogram.set_visible(False)  # type: ignore
-    g.ax_col_dendrogram.set_visible(False)  # type: ignore
+    # g = sns.clustermap(contingency,  # type: ignore
+    #                annot=len(contingency.index) < 30 and len(contingency.columns) < 30,
+    #                fmt='d',
+    #                cmap="YlOrRd",)
+    #
+    # g.ax_row_dendrogram.set_visible(False)  # type: ignore
+    # g.ax_col_dendrogram.set_visible(False)  # type: ignore
+    #
+    # g.ax_heatmap.set_xlabel('Clusters at t=3 hours')
+    # g.ax_heatmap.set_ylabel('Clusters at t=0 hours')
+    # g.ax_heatmap.xaxis.set_label_position('top')
+    # g.ax_heatmap.yaxis.set_label_position('right')
+    # g.ax_heatmap.yaxis.tick_left()
+    # g.ax_heatmap.xaxis.tick_bottom()
+    #
+    # plt.show()
+    #
+    # # buf = io.BytesIO()
+    # # g.figure.savefig(buf, format="png", bbox_inches="tight")
+    # # plt.close(g.figure)
+    # # buf.seek(0)
+    # # return buf
 
-    g.ax_heatmap.set_xlabel('Clusters at t=3 hours')
-    g.ax_heatmap.set_ylabel('Clusters at t=0 hours')
-    g.ax_heatmap.xaxis.set_label_position('top')
-    g.ax_heatmap.yaxis.set_label_position('right')
-    g.ax_heatmap.yaxis.tick_left()
-    g.ax_heatmap.xaxis.tick_bottom()
 
-    buf = io.BytesIO()
-    g.figure.savefig(buf, format="png", bbox_inches="tight")
-    plt.close(g.figure)
-    buf.seek(0)
-    return buf
+if __name__ == "__main__":
+    create_clustermap("2024101900", 0, "jet")
