@@ -1,5 +1,6 @@
 import * as d3 from "d3";
 import { debounce } from 'lodash';
+import { CONTINGENCY_CELL_CLICK, ContingencyClickEvent } from "./event";
 
 interface ContingencyData {
   oldId: string;
@@ -137,5 +138,16 @@ function renderContingencyTable() {
     .style("stroke-width", "0.25px")
     .on("mouseover", mouseover)
     .on("mousemove", mousemove)
-    .on("mouseleave", mouseleave);
+    .on("mouseleave", mouseleave)
+    .on("click", (_: MouseEvent, d: ContingencyData) => {
+      const cellEvent = new CustomEvent<ContingencyClickEvent>(CONTINGENCY_CELL_CLICK, {
+        detail: {
+          oldId: d.oldId,
+          newId: d.newId,
+          value: d.value
+        },
+        bubbles: true
+      });
+      container.dispatchEvent(cellEvent);
+    });
 }

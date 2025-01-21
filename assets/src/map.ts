@@ -1,15 +1,23 @@
-import { scaleOrdinal } from "d3-scale";
+import { ScaleOrdinal, scaleOrdinal } from "d3-scale";
 import { schemeCategory10 } from "d3-scale-chromatic"
 import * as L from "leaflet"
 import 'leaflet/dist/leaflet.css'
 
+declare module 'leaflet' {
+  interface PolylineOptions {
+    id: string;
+  }
+}
 
 let mapLeft: L.Map;
 let lineLayerLeft: L.LayerGroup;
+let linesLeft: L.Polyline[] = [];
 
 let mapRight: L.Map;
 let lineLayerRight: L.LayerGroup;
+let linesRight: L.Polyline[] = [];
 
+let lineColormap: ScaleOrdinal<number, string, never>;
 
 function initMapsContainers(leftContainerId: string, rightContainerId: string): void {
   if (!mapLeft) {
@@ -33,6 +41,7 @@ function initMapsContainers(leftContainerId: string, rightContainerId: string): 
 
 async function _populateMap(
   lineLayer: L.LayerGroup,
+  linesArray: L.Polyline[],
   nodeClusters: Record<string, number>,
   simStart: string,
   timeOffset: number,
@@ -40,7 +49,7 @@ async function _populateMap(
 ) {
   const data = await pywebview.api.get_lines(simStart, timeOffset, lineType); 
 
-  const lineColormap = scaleOrdinal<number, string>(schemeCategory10)
+  lineColormap = scaleOrdinal<number, string>(schemeCategory10)
     .domain([0, Math.max(...Object.values(nodeClusters))])
 
   data.forEach(function(l) {
@@ -57,13 +66,17 @@ async function _populateMap(
     }
 
     const lineColor = nodeClusters[l.id] == -1 ? "#fff" : lineColormap(nodeClusters[l.id])
-    L.polyline(latLons, 
+    const line = L.polyline(latLons, 
       { 
         weight: 2,
         color: lineColor,
-        bubblingMouseEvents: false
-      }).addTo(lineLayer)
-  })
+        bubblingMouseEvents: false,
+        id: l.id,
+      }
+    ).addTo(lineLayer);
+
+    linesArray.push(line);
+  });
 }
 
 
@@ -75,10 +88,10 @@ export function initMaps() {
 export async function populateMap(side: "left" | "right", simStart: string, timeOffset: number, lineType: "jet" | "mta", nodeClusters: Record<string, number>) {
   if (side === "left") {
     lineLayerLeft.clearLayers();
-    await _populateMap(lineLayerLeft, nodeClusters, simStart, timeOffset, lineType);
+    await _populateMap(lineLayerLeft, linesLeft, nodeClusters, simStart, timeOffset, lineType);
   } else {
     lineLayerRight.clearLayers();
-    await _populateMap(lineLayerRight, nodeClusters, simStart, timeOffset, lineType);
+    await _populateMap(lineLayerRight, linesRight, nodeClusters, simStart, timeOffset, lineType);
   }
 }
 
@@ -86,4 +99,38 @@ export async function populateMap(side: "left" | "right", simStart: string, time
 export async function clearMaps() {
   lineLayerLeft.clearLayers();
   lineLayerRight.clearLayers();
+}
+
+
+export function highlightLines(t0Id: string, t1Id: string, t0NodeClusters: Record<string, number>, t1NodeClusters: Record<string, number>) {
+  let t0IdInt = parseInt(t0Id);
+  linesLeft.forEach((l: L.Polyline) => {
+    if (t0NodeClusters[l.options.id] === t0IdInt) {
+      l.setStyle({color: "red", weight: 5});
+    } else {
+      l.setStyle({color: "grey", weight: 1});
+    }
+  })
+
+  let t1IdInt = parseInt(t1Id);
+  linesRight.forEach((l: L.Polyline) => {
+    if (t1NodeClusters[l.options.id] === t1IdInt) {
+      l.setStyle({color: "red", weight: 5});
+    } else {
+      l.setStyle({color: "grey", weight: 1});
+    }
+  })
+}
+
+
+export function resetMapView(t0NodeClusters: Record<string, number>, t1NodeClusters: Record<string, number>) {
+  linesLeft.forEach((l: L.Polyline) => {
+    const lineColor = t0NodeClusters[l.options.id] == -1 ? "#fff" : lineColormap(t0NodeClusters[l.options.id])
+    l.setStyle({color: lineColor, weight: 2})
+  })
+
+  linesRight.forEach((l: L.Polyline) => {
+    const lineColor = t1NodeClusters[l.options.id] == -1 ? "#fff" : lineColormap(t1NodeClusters[l.options.id])
+    l.setStyle({color: lineColor, weight: 2})
+  })
 }

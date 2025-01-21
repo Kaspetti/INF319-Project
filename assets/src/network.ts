@@ -152,9 +152,21 @@ function resetCamera(camera: Camera) {
 }
 
 
-export function resetCameras() {
+export function resetNetworkView() {
   resetCamera(sigmaInstanceLeft.getCamera());
   resetCamera(sigmaInstanceRight.getCamera());
+
+  const graphLeft = sigmaInstanceLeft.getGraph();
+  graphLeft.forEachNode(function(n) {
+    graphLeft.setNodeAttribute(n, "color", "orange");
+    graphLeft.setNodeAttribute(n, "size", 3);
+  })
+
+  const graphRight = sigmaInstanceRight.getGraph();
+  graphRight.forEachNode(function(n) {
+    graphRight.setNodeAttribute(n, "color", "orange");
+    graphRight.setNodeAttribute(n, "size", 3);
+  })
 }
 
 
@@ -178,4 +190,31 @@ export function resetLayouts() {
 
   startLayout("left");
   startLayout("right");
+}
+
+
+export function highlightClusters(t0Id: string, t1Id: string, t0NodeClusters: Record<string, number>, t1NodeClusters: Record<string, number>) {
+  const graphLeft = sigmaInstanceLeft.getGraph()
+  let t0IdInt = parseInt(t0Id);
+  graphLeft.forEachNode(function(n) {
+    if (t0NodeClusters[graphLeft.getNodeAttribute(n, "label")] === t0IdInt) {
+      graphLeft.setNodeAttribute(n, "color", "red");
+      graphLeft.setNodeAttribute(n, "size", "4");
+    } else {
+      graphLeft.setNodeAttribute(n, "color", "orange");
+      graphLeft.setNodeAttribute(n, "size", "3");
+    }
+  })
+
+  const graphRight = sigmaInstanceRight.getGraph()
+  let t1IdInt = parseInt(t1Id);
+  graphRight.forEachNode(function(n) {
+    if (t1NodeClusters[graphRight.getNodeAttribute(n, "label")] === t1IdInt) {
+      graphRight.setNodeAttribute(n, "color", "red");
+      graphRight.setNodeAttribute(n, "size", "4");
+    } else {
+      graphRight.setNodeAttribute(n, "color", "orange");
+      graphRight.setNodeAttribute(n, "size", "3");
+    }
+  })
 }

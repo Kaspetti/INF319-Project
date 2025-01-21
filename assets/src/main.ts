@@ -1,6 +1,7 @@
 import { getContingencyTable } from "./contingencyTable";
-import { clearMaps, initMaps, populateMap } from "./map";
-import { initNetworks, populateNetwork, resetCameras, resetLayouts } from "./network";
+import { CONTINGENCY_CELL_CLICK, isContingencyClickEvent } from "./event";
+import { clearMaps, highlightLines, initMaps, populateMap, resetMapView } from "./map";
+import { highlightClusters, initNetworks, populateNetwork, resetLayouts, resetNetworkView } from "./network";
 
 import './styles/main.css';
 
@@ -15,6 +16,9 @@ let leftNetworkHeading: HTMLHeadingElement;
 let rightNetworkHeading: HTMLHeadingElement;
 
 let currentTimeOffset = 0;
+
+let t0NodeClusters: Record<string, number>;
+let t1NodeClusters: Record<string, number>;
 
 
 async function init() {
@@ -36,11 +40,17 @@ async function populateGraphs() {
 
     await Promise.all([
       populateNetwork("left", "2024101900", currentTimeOffset, 50, 0.05, "jet")
-        .then((nodeClusters) => populateMap("left", "2024101900", currentTimeOffset, "jet", nodeClusters))
+        .then((nodeClusters) => {
+          populateMap("left", "2024101900", currentTimeOffset, "jet", nodeClusters);
+          t0NodeClusters = nodeClusters;
+        })
         .then(() => leftNetworkHeading.textContent = `2024101900 +${currentTimeOffset}h`),
       
       populateNetwork("right", "2024101900", currentTimeOffset + (currentTimeOffset < 72 ? 3 : 6), 50, 0.05, "jet")
-        .then((nodeClusters) => populateMap("right", "2024101900", currentTimeOffset + (currentTimeOffset < 72 ? 3 : 6), "jet", nodeClusters))
+        .then((nodeClusters) => {
+          populateMap("right", "2024101900", currentTimeOffset + (currentTimeOffset < 72 ? 3 : 6), "jet", nodeClusters);
+          t1NodeClusters = nodeClusters;
+        })
         .then(() => rightNetworkHeading.textContent = `2024101900 +${currentTimeOffset + (currentTimeOffset < 72 ? 3 : 6)}h`)
   ]);
 
@@ -74,12 +84,22 @@ function setupPage() {
   resetViewsButton = document.querySelector("#reset-views-button") as HTMLButtonElement;
   resetLayoutsButton = document.querySelector("#reset-layouts-button") as HTMLButtonElement;
 
-  resetViewsButton.addEventListener("click", resetCameras);
+  resetViewsButton.addEventListener("click", resetNetworkView);
+  resetViewsButton.addEventListener("click", () => resetMapView(t0NodeClusters, t1NodeClusters));
   resetLayoutsButton.addEventListener("click", resetLayouts);
 
   // Get headings
   leftNetworkHeading = document.querySelector("#left-network-heading") as HTMLHeadingElement;
   rightNetworkHeading = document.querySelector("#right-network-heading") as HTMLHeadingElement;
+
+  document.addEventListener(CONTINGENCY_CELL_CLICK, (e) => {
+    if (isContingencyClickEvent(e)) {
+      const {oldId, newId, value} = e.detail;
+
+      highlightClusters(oldId, newId, t0NodeClusters, t1NodeClusters);
+      highlightLines(oldId, newId, t0NodeClusters, t1NodeClusters);
+    }
+  })
 }
 
 
