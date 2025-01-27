@@ -4,6 +4,7 @@ import { scaleLinear } from "d3-scale"
 import { rgb } from "d3-color";
 import FA2Layout from "graphology-layout-forceatlas2/worker";
 import { inferSettings } from "graphology-layout-forceatlas2"
+import { SigmaNodeEventPayload } from "sigma/dist/declarations/src/types";
 
 
 // Initialize these here so we can use them later
@@ -13,6 +14,8 @@ let sigmaInstanceRight: Sigma;
 let layoutLeft: FA2Layout | null = null;
 let layoutRight: FA2Layout | null = null;
 
+let t0NodeClusters: Record<string, number>;
+let t1NodeClusters: Record<string, number>;
 
 /**
   * Initializes the two Sigma instances on the containers provided.
@@ -20,10 +23,39 @@ let layoutRight: FA2Layout | null = null;
   * @param rightContainerId - The right container.
 */
 function initializeSigmaInstances(leftContainerId: string, rightContainerId: string): void {
+  function createTooltip(): HTMLDivElement {
+    const tooltip = document.createElement("div");
+    tooltip.style.opacity = "0";
+    tooltip.style.backgroundColor = "white";
+    tooltip.style.border = "solid";
+    tooltip.style.borderWidth = "2px";
+    tooltip.style.borderRadius = "5px";
+    tooltip.style.padding = "5px";
+    tooltip.style.position = "fixed";
+    tooltip.style.zIndex = "9999";
+    tooltip.style.pointerEvents = "none";
+
+    return tooltip;
+  }
+
+  function onNodeHover(e: SigmaNodeEventPayload, tooltip: HTMLDivElement, nodeClusters: Record<string, number>) {
+    const label = `Id: ${e.node}<br>Cluster: ${nodeClusters[e.node]}`
+    tooltip.innerHTML = label;
+
+    tooltip.style.opacity = "1";
+    tooltip.style.left = ((e.event.original as MouseEvent).clientX + 25) + "px";
+    tooltip.style.top = ((e.event.original as MouseEvent).clientY - 25) + "px";
+  }
+
   if (!sigmaInstanceLeft) {
     const container = document.getElementById(leftContainerId);
     if (container) {
       sigmaInstanceLeft = new Sigma(new Graph(), container);
+      
+      const tooltip = container.appendChild(createTooltip());
+
+      sigmaInstanceLeft.on("enterNode", e => onNodeHover(e, tooltip, t0NodeClusters))
+      sigmaInstanceLeft.on("leaveNode", _ => tooltip.style.opacity = "0")
     } else {
       console.error(`Couldn't find container with id ${leftContainerId}`)
     }
@@ -33,6 +65,11 @@ function initializeSigmaInstances(leftContainerId: string, rightContainerId: str
     const container = document.getElementById(rightContainerId);
     if (container) {
       sigmaInstanceRight = new Sigma(new Graph(), container);
+
+      const tooltip = container.appendChild(createTooltip());
+
+      sigmaInstanceRight.on("enterNode", e => onNodeHover(e, tooltip, t1NodeClusters))
+      sigmaInstanceRight.on("leaveNode", _ => tooltip.style.opacity = "0")
     } else {
       console.error(`Couldn't find container with id ${rightContainerId}`)
     }
@@ -68,7 +105,7 @@ async function _populateNetwork(
     .range(["#ff1a1a", "#1a1aff"]);
 
   nodes.forEach(n => {
-    graph.addNode(n.id, {size: 3, color: "#ff9900", label: n.id, x: Math.random(), y: Math.random()});
+    graph.addNode(n.id, {size: 3, color: "#ff9900", x: Math.random(), y: Math.random()});
   });
 
   links.forEach(l => {
@@ -130,8 +167,10 @@ export async function populateNetwork(
     resetCamera(sigmaInstanceLeft.getCamera());
     sigmaInstanceLeft.refresh();
 
+    t0NodeClusters = nodeClustersLeft;
     return nodeClustersLeft;
   } else {
+    console.log(timeOffset);
     sigmaInstanceRight.getGraph().clear();
     if (layoutRight) { layoutRight.kill(); }
     const nodeClustersRight = await _populateNetwork(sigmaInstanceRight.getGraph(), simStart, timeOffset, distThreshold, requiredRatio, lineType);
@@ -140,6 +179,7 @@ export async function populateNetwork(
     resetCamera(sigmaInstanceRight.getCamera());
     sigmaInstanceRight.refresh();
 
+    t1NodeClusters = nodeClustersRight;
     return nodeClustersRight;
   }
 }
@@ -197,7 +237,7 @@ export function highlightClusters(t0Id: string, t1Id: string, t0NodeClusters: Re
   const graphLeft = sigmaInstanceLeft.getGraph()
   let t0IdInt = parseInt(t0Id);
   graphLeft.forEachNode(function(n) {
-    if (t0NodeClusters[graphLeft.getNodeAttribute(n, "label")] === t0IdInt) {
+    if (t0NodeClusters[n] === t0IdInt) {
       graphLeft.setNodeAttribute(n, "color", "red");
       graphLeft.setNodeAttribute(n, "size", "4");
     } else {
@@ -209,7 +249,7 @@ export function highlightClusters(t0Id: string, t1Id: string, t0NodeClusters: Re
   const graphRight = sigmaInstanceRight.getGraph()
   let t1IdInt = parseInt(t1Id);
   graphRight.forEachNode(function(n) {
-    if (t1NodeClusters[graphRight.getNodeAttribute(n, "label")] === t1IdInt) {
+    if (t1NodeClusters[n] === t1IdInt) {
       graphRight.setNodeAttribute(n, "color", "red");
       graphRight.setNodeAttribute(n, "size", "4");
     } else {

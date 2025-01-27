@@ -1,6 +1,7 @@
 from typing import Literal, TypedDict
+import json
 
-from line_reader import Line, get_all_lines_at_time
+from line_reader import Line, get_all_lines, get_all_lines_at_time
 from data import Network, generate_network
 from multiscale import multiscale
 from track_lines_devel import add_length_col, track_lines
@@ -104,4 +105,10 @@ def create_clustermap(lines_t0: list[Line], lines_t1: list[Line], network_t0: Ne
 
 
 if __name__ == "__main__":
-    create_clustermap("2024101900", 0, "jet")
+    loaded_networks: dict[str, Network]
+    with open("networks.json", "r") as f:
+        loaded_networks = json.load(f)
+
+    lines = get_all_lines("2024101900", "jet")
+
+    create_clustermap(lines[0], lines[3], loaded_networks["20241019000500.05jet"], loaded_networks["20241019003500.05jet"])

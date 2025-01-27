@@ -18,7 +18,7 @@ class Api:
 
     # The key in this dictionary is a combination of the parameters for the network
     # sim_start+time_offset+dist_threshold_required_ratio
-    # eg. "2024101900+00+50+0.05" = "202410190000500.05"
+    # eg. "2024101900+0+50+0.05" = "20241019000500.05"
     loaded_networks: dict[str, Network]
 
     loaded_contingency: dict[str, list[list[int]]]
@@ -109,7 +109,7 @@ class Api:
         return lines_dict
 
     def get_contingency_table(self, sim_start: str, time_offset: int, dist_threshold: int, required_ratio: float, line_type: Literal["jet", "mta"]):
-        t1 = time_offset + (6 if time_offset > 72 else 3)
+        t1 = time_offset + (3 if time_offset < 72 else 6)
         if str(time_offset)+str(t1) in self.loaded_contingency:
             return self.loaded_contingency[str(time_offset)+str(t1)]
 

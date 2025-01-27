@@ -1,6 +1,7 @@
 import * as d3 from "d3";
 import { debounce } from 'lodash';
 import { CONTINGENCY_CELL_CLICK, ContingencyClickEvent } from "./event";
+import * as reorder from "reorder.js";
 
 interface ContingencyData {
   oldId: string;
@@ -55,6 +56,20 @@ function renderContingencyTable() {
     .append("g")
     .attr("transform", `translate(${margin.left},${margin.top})`);
 
+  // The data but only the actaul clusters (no_match and no_clusters removed)
+  // let dataClusters = currentRawData.slice(1, -1).map(row => row.slice(1, -1));
+  // let testGraph = reorder.mat2graph(dataClusters, false);
+  //
+  // const barycenterOrder = (reorder as any).barycenter_order;
+  //
+  // // Then use it with @ts-ignore
+  // // @ts-ignore
+  // let orders: number[][] = barycenterOrder(testGraph);
+  // console.log(orders);
+  //
+  // let order: string[] = reorder.optimal_leaf_order()
+  //   .reorder(dataClusters).map(d => d.toString());
+
   let t0: string[] = [];
   for (let i = -1; i < currentRawData[0].length - 2; i++) {
     t0.push(i.toString());
@@ -67,6 +82,8 @@ function renderContingencyTable() {
   }
   t1.push("-");
 
+  // let t: string[] = ["-1", ...order, "-"];
+  
   let x = d3.scaleBand()
     .range([0, width])
     .domain(t0)
