@@ -5,6 +5,7 @@ import { rgb } from "d3-color";
 import FA2Layout from "graphology-layout-forceatlas2/worker";
 import { inferSettings } from "graphology-layout-forceatlas2"
 import { SigmaNodeEventPayload } from "sigma/dist/declarations/src/types";
+import { NETWORK_NODE_CLICK, NetworkClickEvent } from "./event";
 
 
 // Initialize these here so we can use them later
@@ -14,8 +15,8 @@ let sigmaInstanceRight: Sigma;
 let layoutLeft: FA2Layout | null = null;
 let layoutRight: FA2Layout | null = null;
 
-let t0NodeClusters: Record<string, number>;
-let t1NodeClusters: Record<string, number>;
+let t0NodeClusters: Record<string, string>;
+let t1NodeClusters: Record<string, string>;
 
 /**
   * Initializes the two Sigma instances on the containers provided.
@@ -38,13 +39,25 @@ function initializeSigmaInstances(leftContainerId: string, rightContainerId: str
     return tooltip;
   }
 
-  function onNodeHover(e: SigmaNodeEventPayload, tooltip: HTMLDivElement, nodeClusters: Record<string, number>) {
+  function onNodeHover(e: SigmaNodeEventPayload, tooltip: HTMLDivElement, nodeClusters: Record<string, string>) {
     const label = `Id: ${e.node}<br>Cluster: ${nodeClusters[e.node]}`
     tooltip.innerHTML = label;
 
     tooltip.style.opacity = "1";
     tooltip.style.left = ((e.event.original as MouseEvent).clientX + 25) + "px";
     tooltip.style.top = ((e.event.original as MouseEvent).clientY - 25) + "px";
+  }
+
+  function onNodeClick(e: SigmaNodeEventPayload, t: 0 | 1) {
+    const nodeEvent = new CustomEvent<NetworkClickEvent>(NETWORK_NODE_CLICK, {
+      detail: {
+        lineId: e.node,
+        clusterId: t === 0 ? t0NodeClusters[e.node] : t1NodeClusters[e.node],
+        t: t,
+      },
+      bubbles: true
+    });
+    document.dispatchEvent(nodeEvent);
   }
 
   if (!sigmaInstanceLeft) {
@@ -54,8 +67,9 @@ function initializeSigmaInstances(leftContainerId: string, rightContainerId: str
       
       const tooltip = container.appendChild(createTooltip());
 
-      sigmaInstanceLeft.on("enterNode", e => onNodeHover(e, tooltip, t0NodeClusters))
-      sigmaInstanceLeft.on("leaveNode", _ => tooltip.style.opacity = "0")
+      sigmaInstanceLeft.on("enterNode", e => onNodeHover(e, tooltip, t0NodeClusters));
+      sigmaInstanceLeft.on("leaveNode", _ => tooltip.style.opacity = "0");
+      sigmaInstanceLeft.on("clickNode", e => onNodeClick(e, 0));
     } else {
       console.error(`Couldn't find container with id ${leftContainerId}`)
     }
@@ -68,10 +82,11 @@ function initializeSigmaInstances(leftContainerId: string, rightContainerId: str
 
       const tooltip = container.appendChild(createTooltip());
 
-      sigmaInstanceRight.on("enterNode", e => onNodeHover(e, tooltip, t1NodeClusters))
-      sigmaInstanceRight.on("leaveNode", _ => tooltip.style.opacity = "0")
+      sigmaInstanceRight.on("enterNode", e => onNodeHover(e, tooltip, t1NodeClusters));
+      sigmaInstanceRight.on("leaveNode", _ => tooltip.style.opacity = "0");
+      sigmaInstanceRight.on("clickNode", e => onNodeClick(e, 1));
     } else {
-      console.error(`Couldn't find container with id ${rightContainerId}`)
+      console.error(`Couldn't find container with id ${rightContainerId}`);
     }
   }
 }
@@ -93,7 +108,7 @@ async function _populateNetwork(
   distThreshold: number,
   requriedRatio: number,
   lineType: "jet" | "mta"
-): Promise<Record<string, number>> {
+): Promise<Record<string, string>> {
   const data = await pywebview.api.get_network(simStart, timeOffset, distThreshold, requriedRatio, lineType); 
   
   const links = Object.values(data.clusters).flat().map(d => ({...d}));
@@ -156,7 +171,7 @@ export async function populateNetwork(
   distThreshold: number,
   requiredRatio: number,
   lineType: "jet" | "mta"
-): Promise<Record<string, number>> {
+): Promise<Record<string, string>> {
 
   if (side === "left") {
     sigmaInstanceLeft.getGraph().clear();
@@ -170,7 +185,6 @@ export async function populateNetwork(
     t0NodeClusters = nodeClustersLeft;
     return nodeClustersLeft;
   } else {
-    console.log(timeOffset);
     sigmaInstanceRight.getGraph().clear();
     if (layoutRight) { layoutRight.kill(); }
     const nodeClustersRight = await _populateNetwork(sigmaInstanceRight.getGraph(), simStart, timeOffset, distThreshold, requiredRatio, lineType);
@@ -233,28 +247,18 @@ export function resetLayouts() {
 }
 
 
-export function highlightClusters(t0Id: string, t1Id: string, t0NodeClusters: Record<string, number>, t1NodeClusters: Record<string, number>) {
-  const graphLeft = sigmaInstanceLeft.getGraph()
-  let t0IdInt = parseInt(t0Id);
-  graphLeft.forEachNode(function(n) {
-    if (t0NodeClusters[n] === t0IdInt) {
-      graphLeft.setNodeAttribute(n, "color", "red");
-      graphLeft.setNodeAttribute(n, "size", "4");
-    } else {
-      graphLeft.setNodeAttribute(n, "color", "orange");
-      graphLeft.setNodeAttribute(n, "size", "3");
-    }
-  })
+export function highlightClusters(clusterIds: string[], t: 0 | 1) {
+  const graph = t == 0 ? sigmaInstanceLeft.getGraph() : sigmaInstanceRight.getGraph();
+  const nodeClusters = t == 0 ? t0NodeClusters : t1NodeClusters;
+  clusterIds = clusterIds.map(d => d.toString());
 
-  const graphRight = sigmaInstanceRight.getGraph()
-  let t1IdInt = parseInt(t1Id);
-  graphRight.forEachNode(function(n) {
-    if (t1NodeClusters[n] === t1IdInt) {
-      graphRight.setNodeAttribute(n, "color", "red");
-      graphRight.setNodeAttribute(n, "size", "4");
+  graph.forEachNode(n => {
+    if (clusterIds.includes(nodeClusters[n].toString())) {
+      graph.setNodeAttribute(n, "color", "lime");
+      graph.setNodeAttribute(n, "size", "4");
     } else {
-      graphRight.setNodeAttribute(n, "color", "orange");
-      graphRight.setNodeAttribute(n, "size", "3");
+      graph.setNodeAttribute(n, "color", "grey");
+      graph.setNodeAttribute(n, "size", "3");
     }
   })
 }

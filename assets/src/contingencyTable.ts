@@ -1,7 +1,7 @@
 import * as d3 from "d3";
 import { debounce } from 'lodash';
 import { CONTINGENCY_CELL_CLICK, ContingencyClickEvent } from "./event";
-import * as reorder from "reorder.js";
+// import * as reorder from "reorder.js";
 
 interface ContingencyData {
   oldId: string;
@@ -11,6 +11,8 @@ interface ContingencyData {
 
 let currentData: ContingencyData[] = [];
 let currentRawData: number[][] = [];
+
+let color: d3.ScaleLinear<string, string, never>;
 
 export async function getContingencyTable(simStart: string, timeOffset: number, distThreshold: number, requiredRatio: number, lineType: "jet" | "mta") {
   const container = document.querySelector("#contingency-table") as HTMLDivElement;
@@ -37,7 +39,7 @@ export async function getContingencyTable(simStart: string, timeOffset: number, 
   }
 }
 
-function renderContingencyTable() {
+export function renderContingencyTable() {
   if (currentData.length === 0) return;
 
   const container = document.querySelector("#contingency-table") as HTMLDivElement;
@@ -107,7 +109,7 @@ function renderContingencyTable() {
     .selectAll("path, line")
     .style("stroke", "white");
 
-  var color = d3.scaleLinear<string>()
+  color = d3.scaleLinear<string>()
     .range(["#1F2937", "#10FF81"])
     .domain([1, 100]);
 
@@ -157,6 +159,15 @@ function renderContingencyTable() {
     .on("mousemove", mousemove)
     .on("mouseleave", mouseleave)
     .on("click", (_: MouseEvent, d: ContingencyData) => {
+      svg.selectAll<SVGRectElement, ContingencyData>("rect")
+        .style("fill", function(d2) {
+          if (d == d2) {
+            return "lime"
+          } else {
+            return color(d2.value)
+          }
+        })
+
       const cellEvent = new CustomEvent<ContingencyClickEvent>(CONTINGENCY_CELL_CLICK, {
         detail: {
           oldId: d.oldId,
@@ -167,4 +178,37 @@ function renderContingencyTable() {
       });
       container.dispatchEvent(cellEvent);
     });
+}
+
+export function getNewIds(oldId: string): string[] {
+  return currentData.filter(d => d.oldId == oldId && d.value > 0).map(d => d.newId);
+}
+
+export function getOldIds(newId: string): string[] {
+  return currentData.filter(d => d.newId == newId && d.value > 0).map(d => d.oldId);
+}
+
+export function highlightCellsOldId(oldId: string) {
+  d3.select("#contingency-table svg")
+    .selectAll<SVGRectElement, ContingencyData>("rect")
+    .style("fill", function(d) {
+      if (d.oldId == oldId && d.value > 0) {
+        return "lime";
+      } else {
+        return color(d.value);
+      }
+  })
+}
+
+
+export function highlightCellsNewId(newId: string) {
+  d3.select("#contingency-table svg")
+    .selectAll<SVGRectElement, ContingencyData>("rect")
+    .style("fill", function(d) {
+      if (d.newId == newId && d.value > 0) {
+        return "lime";
+      } else {
+        return color(d.value);
+      }
+  })
 }

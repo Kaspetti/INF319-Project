@@ -39,7 +39,7 @@ type Node = {
 type Network = {
   nodes: Node[];
   clusters: Record<number, Connection[]>;
-  node_clusters: Record<string, number>;
+  node_clusters: Record<string, string>;
 }
 
 type CoordGeo = {

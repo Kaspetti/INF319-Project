@@ -1,5 +1,6 @@
-import { getContingencyTable } from "./contingencyTable";
-import { CONTINGENCY_CELL_CLICK, isContingencyClickEvent } from "./event";
+import { line } from "d3";
+import { getContingencyTable, getNewIds, getOldIds, highlightCellsNewId, highlightCellsOldId, renderContingencyTable } from "./contingencyTable";
+import { CONTINGENCY_CELL_CLICK, isContingencyClickEvent, isNetworkClickEvent, NETWORK_NODE_CLICK } from "./event";
 import { clearMaps, highlightLines, initMaps, populateMap, resetMapView } from "./map";
 import { highlightClusters, initNetworks, populateNetwork, resetLayouts, resetNetworkView } from "./network";
 
@@ -17,8 +18,8 @@ let rightNetworkHeading: HTMLHeadingElement;
 
 let currentTimeOffset = 0;
 
-let t0NodeClusters: Record<string, number>;
-let t1NodeClusters: Record<string, number>;
+let t0NodeClusters: Record<string, string>;
+let t1NodeClusters: Record<string, string>;
 
 
 async function init() {
@@ -86,6 +87,7 @@ function setupPage() {
 
   resetViewsButton.addEventListener("click", resetNetworkView);
   resetViewsButton.addEventListener("click", () => resetMapView(t0NodeClusters, t1NodeClusters));
+  resetViewsButton.addEventListener("click", renderContingencyTable);
   resetLayoutsButton.addEventListener("click", resetLayouts);
 
   // Get headings
@@ -96,8 +98,25 @@ function setupPage() {
     if (isContingencyClickEvent(e)) {
       const {oldId, newId, value} = e.detail;
 
-      highlightClusters(oldId, newId, t0NodeClusters, t1NodeClusters);
+      highlightClusters([oldId], 0);
+      highlightClusters([newId], 1);
       highlightLines(oldId, newId, t0NodeClusters, t1NodeClusters);
+    }
+  })
+
+  document.addEventListener(NETWORK_NODE_CLICK, (e) => {
+    if (isNetworkClickEvent(e)) {
+      const {lineId, clusterId, t} = e.detail;
+
+      if (t === 0) {
+        highlightClusters([clusterId], 0);
+        highlightClusters(getNewIds(clusterId), 1);
+        highlightCellsOldId(clusterId);
+      } else {
+        highlightClusters([clusterId], 1);
+        highlightClusters(getOldIds(clusterId), 0);
+        highlightCellsNewId(clusterId);
+      }
     }
   })
 }
