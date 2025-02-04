@@ -21,6 +21,12 @@ let currentTimeOffset = 0;
 let t0NodeClusters: Record<string, string>;
 let t1NodeClusters: Record<string, string>;
 
+let settingsForm: HTMLFormElement;
+let simStartInput: HTMLInputElement;
+let distThresholdInput: HTMLInputElement;
+let requiredRatioInput: HTMLInputElement;
+let lineTypeSelect: HTMLSelectElement;
+
 let settings: Settings;
 
 
@@ -42,6 +48,7 @@ async function populateGraphs() {
   toggleInputs(false);
   leftNetworkHeading.textContent = "Loading..."
   rightNetworkHeading.textContent = "Loading..."
+  settingsForm.classList.add('opacity-50', 'pointer-events-none');
 
     await Promise.all([
       populateNetwork("left", settings.simStart, currentTimeOffset, settings.distThreshold, settings.requiredRatio, settings.lineType)
@@ -61,6 +68,7 @@ async function populateGraphs() {
 
   await getContingencyTable(settings.simStart, currentTimeOffset, settings.distThreshold, settings.requiredRatio, settings.lineType);
   toggleInputs(true);
+  settingsForm.classList.remove('opacity-50', 'pointer-events-none');
 }
 
 
@@ -137,6 +145,32 @@ function setupPage() {
       }
     }
   })
+
+  settingsForm = document.querySelector("#settings-form") as HTMLFormElement;
+  simStartInput = document.querySelector("#simStart") as HTMLInputElement;
+  distThresholdInput = document.querySelector("#distThreshold") as HTMLInputElement;
+  requiredRatioInput = document.querySelector("#requiredRatio") as HTMLInputElement;
+  lineTypeSelect = document.querySelector("#lineType") as HTMLSelectElement;
+
+  simStartInput.value = settings.simStart;
+  distThresholdInput.value = settings.distThreshold.toString();
+  requiredRatioInput.value = settings.requiredRatio.toString();
+  lineTypeSelect.value = settings.lineType;
+
+  settingsForm.addEventListener("submit", handleSettingsSubmit);
+}
+
+
+function handleSettingsSubmit(e: Event) {
+  e.preventDefault();
+  
+  settings.simStart = simStartInput.value;
+  settings.distThreshold = parseFloat(distThresholdInput.value);
+  settings.requiredRatio = parseFloat(requiredRatioInput.value);
+  settings.lineType = lineTypeSelect.value as 'jet' | 'mta';
+
+  currentTimeOffset = 0; 
+  populateGraphs();
 }
 
 
