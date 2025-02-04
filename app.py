@@ -1,7 +1,7 @@
 import sys
 import json
 import os
-from typing import Literal
+from typing import Literal, TypedDict
 
 from line_reader import Line, get_all_lines
 from multiscale import multiscale
@@ -10,6 +10,13 @@ from tracking import create_clustermap
 
 import webview
 from filelock import BaseFileLock, FileLock
+
+
+class Settings(TypedDict):
+    simStart: str
+    distThreshold: float
+    requiredRatio: float
+    lineType: Literal["jet", "mta"]
 
 
 class Api:
@@ -26,6 +33,8 @@ class Api:
     network_lock: BaseFileLock
     lines_lock: BaseFileLock
     contingency_lock: BaseFileLock
+
+    settings: Settings
 
     def __init__(self):
         """Initializes the api
@@ -47,6 +56,19 @@ class Api:
         else:
             with open("contingency.json", "r") as f:
                 self.loaded_contingency = json.load(f)
+
+        if not os.path.exists("settings.json"):
+            self.settings = Settings(
+                simStart="2024101900",
+                distThreshold=50,
+                requiredRatio=0.05,
+                lineType="jet",
+            )
+            with open("settings.json", "w+") as f:
+                json.dump(self.settings, f, indent=4)
+        else:
+            with open("settings.json", "r") as f:
+                self.settings = json.load(f)
 
         self.loaded_lines = {}
         
@@ -110,8 +132,10 @@ class Api:
 
     def get_contingency_table(self, sim_start: str, time_offset: int, dist_threshold: int, required_ratio: float, line_type: Literal["jet", "mta"]):
         t1 = time_offset + (3 if time_offset < 72 else 6)
-        if str(time_offset)+str(t1) in self.loaded_contingency:
-            return self.loaded_contingency[str(time_offset)+str(t1)]
+        contingency_key = sim_start + str(dist_threshold) + str(required_ratio) + line_type + str(time_offset) + str(t1)
+
+        if contingency_key in self.loaded_contingency:
+            return self.loaded_contingency[contingency_key]
 
         network_key = sim_start + str(time_offset) + str(dist_threshold) + str(required_ratio) + line_type
         network_t0 = self.loaded_networks[network_key]
@@ -125,13 +149,17 @@ class Api:
 
         contingency = create_clustermap(lines_t0, lines_t1, network_t0, network_t1)
 
-        self.loaded_contingency[str(time_offset)+str(t1)] = contingency
+        self.loaded_contingency[contingency_key] = contingency
 
         with self.contingency_lock:
             with open("contingency.json", "w+") as f:
                 json.dump(self.loaded_contingency, f)
 
         return contingency
+
+
+    def get_settings(self) -> Settings:
+        return self.settings
 
 
 if __name__ == '__main__':

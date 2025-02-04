@@ -1,7 +1,6 @@
 import * as d3 from "d3";
-import { debounce } from 'lodash';
+import { debounce, max } from 'lodash';
 import { CONTINGENCY_CELL_CLICK, ContingencyClickEvent } from "./event";
-// import * as reorder from "reorder.js";
 
 interface ContingencyData {
   oldId: string;
@@ -58,33 +57,48 @@ export function renderContingencyTable() {
     .append("g")
     .attr("transform", `translate(${margin.left},${margin.top})`);
 
-  // The data but only the actaul clusters (no_match and no_clusters removed)
-  // let dataClusters = currentRawData.slice(1, -1).map(row => row.slice(1, -1));
-  // let testGraph = reorder.mat2graph(dataClusters, false);
-  //
-  // const barycenterOrder = (reorder as any).barycenter_order;
-  //
-  // // Then use it with @ts-ignore
-  // // @ts-ignore
-  // let orders: number[][] = barycenterOrder(testGraph);
-  // console.log(orders);
-  //
-  // let order: string[] = reorder.optimal_leaf_order()
-  //   .reorder(dataClusters).map(d => d.toString());
+  // Get the data without -1 and "-" rows/columns
+  let rawDataInner = currentRawData.slice(1, -1).map(row => row.slice(1, -1));
+  let t0: string[] = ["-1"];
+  let t1: string[] = [];
+  for (let i = 0; i < rawDataInner.length; i++) {
+    const cellsOrderedByValue = rawDataInner
+      .map((r, i) => ({row: i, col: d3.maxIndex(r), value: max(r)}))
+      .sort((a ,b) => {
+        if (a.value === undefined || b.value === undefined) return 0;
+        return b.value - a.value;
+      });
 
-  let t0: string[] = [];
-  for (let i = -1; i < currentRawData[0].length - 2; i++) {
-    t0.push(i.toString());
+    const row = cellsOrderedByValue[0].row;
+    const col = cellsOrderedByValue[0].col;
+
+    t0.push(col.toString());
+    t1.push(row.toString());
+
+    for (let c = 0; c < rawDataInner[0].length; c++) {
+      rawDataInner[row][c] = -1;
+    }
+    for (let r = 0; r < rawDataInner[0].length; r++) {
+      rawDataInner[r][col] = -1;
+    }
   }
+  t1.push("-1");
+  t1 = t1.reverse();
+
+  t1.push("-");
   t0.push("-");
 
-  let t1: string[] = [];
-  for (let i = -1; i < currentRawData.length - 2; i++) {
-    t1.push(i.toString());
-  }
-  t1.push("-");
-
-  // let t: string[] = ["-1", ...order, "-"];
+  // let t0: string[] = [];
+  // for (let i = -1; i < currentRawData[0].length - 2; i++) {
+  //   t0.push(i.toString());
+  // }
+  // t0.push("-");
+  //
+  // let t1: string[] = [];
+  // for (let i = -1; i < currentRawData.length - 2; i++) {
+  //   t1.push(i.toString());
+  // }
+  // t1.push("-");
   
   let x = d3.scaleBand()
     .range([0, width])

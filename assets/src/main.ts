@@ -1,10 +1,10 @@
-import { line } from "d3";
 import { getContingencyTable, getNewIds, getOldIds, highlightCellsNewId, highlightCellsOldId, renderContingencyTable } from "./contingencyTable";
 import { CONTINGENCY_CELL_CLICK, isContingencyClickEvent, isNetworkClickEvent, NETWORK_NODE_CLICK } from "./event";
 import { clearMaps, highlightLines, initMaps, populateMap, resetMapView } from "./map";
 import { highlightClusters, initNetworks, populateNetwork, resetLayouts, resetNetworkView } from "./network";
 
 import './styles/main.css';
+import { Settings } from "./types/pywebview";
 
 
 let previousButton: HTMLButtonElement;
@@ -21,8 +21,12 @@ let currentTimeOffset = 0;
 let t0NodeClusters: Record<string, string>;
 let t1NodeClusters: Record<string, string>;
 
+let settings: Settings;
+
 
 async function init() {
+  settings = await pywebview.api.get_settings();
+
   setupPage();
 
   initNetworks();
@@ -40,22 +44,22 @@ async function populateGraphs() {
   rightNetworkHeading.textContent = "Loading..."
 
     await Promise.all([
-      populateNetwork("left", "2024101900", currentTimeOffset, 50, 0.05, "jet")
+      populateNetwork("left", settings.simStart, currentTimeOffset, settings.distThreshold, settings.requiredRatio, settings.lineType)
         .then((nodeClusters) => {
-          populateMap("left", "2024101900", currentTimeOffset, "jet", nodeClusters);
+          populateMap("left", settings.simStart, currentTimeOffset, settings.lineType, nodeClusters);
           t0NodeClusters = nodeClusters;
         })
-        .then(() => leftNetworkHeading.textContent = `2024101900 +${currentTimeOffset}h`),
+        .then(() => leftNetworkHeading.textContent = `${settings.simStart} +${currentTimeOffset}h`),
       
-      populateNetwork("right", "2024101900", currentTimeOffset + (currentTimeOffset < 72 ? 3 : 6), 50, 0.05, "jet")
+      populateNetwork("right", settings.simStart, currentTimeOffset + (currentTimeOffset < 72 ? 3 : 6), settings.distThreshold, settings.requiredRatio, settings.lineType)
         .then((nodeClusters) => {
-          populateMap("right", "2024101900", currentTimeOffset + (currentTimeOffset < 72 ? 3 : 6), "jet", nodeClusters);
+          populateMap("right", settings.simStart, currentTimeOffset + (currentTimeOffset < 72 ? 3 : 6), settings.lineType, nodeClusters);
           t1NodeClusters = nodeClusters;
         })
-        .then(() => rightNetworkHeading.textContent = `2024101900 +${currentTimeOffset + (currentTimeOffset < 72 ? 3 : 6)}h`)
+        .then(() => rightNetworkHeading.textContent = `${settings.simStart} +${currentTimeOffset + (currentTimeOffset < 72 ? 3 : 6)}h`)
   ]);
 
-  await getContingencyTable("2024101900", currentTimeOffset, 50, 0.05, "jet");
+  await getContingencyTable(settings.simStart, currentTimeOffset, settings.distThreshold, settings.requiredRatio, settings.lineType);
   toggleInputs(true);
 }
 
@@ -100,7 +104,9 @@ function setupPage() {
 
       highlightClusters([oldId], 0);
       highlightClusters([newId], 1);
-      highlightLines(oldId, newId, t0NodeClusters, t1NodeClusters);
+
+      highlightLines([oldId], 0);
+      highlightLines([newId], 1);
     }
   })
 
@@ -109,12 +115,24 @@ function setupPage() {
       const {lineId, clusterId, t} = e.detail;
 
       if (t === 0) {
+        const newIds = getNewIds(clusterId);
+
         highlightClusters([clusterId], 0);
-        highlightClusters(getNewIds(clusterId), 1);
+        highlightClusters(newIds, 1);
+
+        highlightLines([clusterId], 0);
+        highlightLines(newIds, 1);
+
         highlightCellsOldId(clusterId);
       } else {
+        const oldIds = getOldIds(clusterId);
+
         highlightClusters([clusterId], 1);
-        highlightClusters(getOldIds(clusterId), 0);
+        highlightClusters(oldIds, 0);
+
+        highlightLines([clusterId], 1);
+        highlightLines(oldIds, 0);
+
         highlightCellsNewId(clusterId);
       }
     }

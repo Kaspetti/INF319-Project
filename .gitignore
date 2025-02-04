@@ -13,3 +13,4 @@ dist/
 *.lock
 
 networks.json
+contingency.json

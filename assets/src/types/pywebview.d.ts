@@ -21,7 +21,9 @@ declare global {
         distThreshold: number, 
         requiredRatio: number,
         lineType: "jet" | "mta"
-      ) => Promise<number[][]>
+      ) => Promise<number[][]>,
+
+      get_settings: () => Settings
     }
   };
 }
@@ -53,4 +55,11 @@ type Line = {
   centroid: CoordGeo;
 }
 
-export { Network, Line };
+type Settings = {
+  simStart: string;
+  distThreshold: number;
+  requiredRatio: number;
+  lineType: "jet" | "mta";
+}
+
+export { Network, Line, Settings };

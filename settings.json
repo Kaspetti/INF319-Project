@@ -1,0 +1,6 @@
+{
+    "simStart": "2024101900",
+    "distThreshold": 50,
+    "requiredRatio": 0.05,
+    "lineType": "jet"
+}
