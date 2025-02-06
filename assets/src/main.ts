@@ -169,7 +169,7 @@ function handleSettingsSubmit(e: Event) {
   settings.requiredRatio = parseFloat(requiredRatioInput.value);
   settings.lineType = lineTypeSelect.value as 'jet' | 'mta';
 
-  currentTimeOffset = 0; 
+  // currentTimeOffset = 0; 
   populateGraphs();
 }
 
