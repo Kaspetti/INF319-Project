@@ -1,6 +1,8 @@
 from typing import Literal, TypedDict
 import json
 
+from pandas.core.api import DataFrame
+
 from line_reader import Line, get_all_lines, get_all_lines_at_time
 from data import Network, generate_network
 from multiscale import multiscale
@@ -17,7 +19,7 @@ class Row(TypedDict):
 
 
 # def create_clustermap(simstart: str, time_offset: int, line_type: Literal["mta", "jet"]) -> list[list[int]]:
-def create_clustermap(lines_t0: list[Line], lines_t1: list[Line], network_t0: Network, network_t1: Network) -> list[list[int]]:
+def create_clustermap(lines_t0: list[Line], lines_t1: list[Line], network_t0: Network, network_t1: Network) -> tuple[DataFrame, list[tuple[str, str]]]:#list[list[int]]:
     # Generate clusters at t0
     # lines_t0 = get_all_lines_at_time(simstart, time_offset, line_type)
     # ico_points_ms_t0, line_points_ms_t0 = multiscale(lines_t0, 2)
@@ -92,16 +94,17 @@ def create_clustermap(lines_t0: list[Line], lines_t1: list[Line], network_t0: Ne
         cluster_t1 = network_t1["node_clusters"][no_match]
         contingency.loc["no_match", cluster_t1] += 1    # type: ignore
 
-    row_totals = contingency.sum(axis=1)  # type: ignore
-    col_totals = contingency.sum(axis=0)  # type: ignore
+    # row_totals = contingency.sum(axis=1)  # type: ignore
+    # col_totals = contingency.sum(axis=0)  # type: ignore
+    #
+    # new_index = [f"{idx} ({row_totals[idx]})" for idx in contingency.index]
+    # new_columns = [f"{col} ({col_totals[col]})" for col in contingency.columns]
+    #
+    # contingency.index = new_index   # type: ignore
+    # contingency.columns = new_columns
 
-    new_index = [f"{idx} ({row_totals[idx]})" for idx in contingency.index]
-    new_columns = [f"{col} ({col_totals[col]})" for col in contingency.columns]
-
-    contingency.index = new_index   # type: ignore
-    contingency.columns = new_columns
-
-    return contingency.to_numpy().tolist();
+    return contingency, all_matches
+    # return contingency.to_numpy().tolist();
 
 
 if __name__ == "__main__":

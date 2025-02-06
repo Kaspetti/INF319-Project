@@ -50,21 +50,14 @@ async function populateGraphs() {
   rightNetworkHeading.textContent = "Loading..."
   settingsForm.classList.add('opacity-50', 'pointer-events-none');
 
-    await Promise.all([
-      populateNetwork("left", settings.simStart, currentTimeOffset, settings.distThreshold, settings.requiredRatio, settings.lineType)
-        .then((nodeClusters) => {
-          populateMap("left", settings.simStart, currentTimeOffset, settings.lineType, nodeClusters);
-          t0NodeClusters = nodeClusters;
-        })
+  t0NodeClusters = await populateNetwork("left", settings.simStart, currentTimeOffset, settings.distThreshold, settings.requiredRatio, settings.lineType);
+  await populateMap("left", settings.simStart, currentTimeOffset, settings.lineType, t0NodeClusters)
         .then(() => leftNetworkHeading.textContent = `${settings.simStart} +${currentTimeOffset}h`),
+
       
-      populateNetwork("right", settings.simStart, currentTimeOffset + (currentTimeOffset < 72 ? 3 : 6), settings.distThreshold, settings.requiredRatio, settings.lineType)
-        .then((nodeClusters) => {
-          populateMap("right", settings.simStart, currentTimeOffset + (currentTimeOffset < 72 ? 3 : 6), settings.lineType, nodeClusters);
-          t1NodeClusters = nodeClusters;
-        })
+  t1NodeClusters = await populateNetwork("right", settings.simStart, currentTimeOffset + (currentTimeOffset < 72 ? 3 : 6), settings.distThreshold, settings.requiredRatio, settings.lineType);
+  await populateMap("right", settings.simStart, currentTimeOffset + (currentTimeOffset < 72 ? 3 : 6), settings.lineType, t1NodeClusters)
         .then(() => rightNetworkHeading.textContent = `${settings.simStart} +${currentTimeOffset + (currentTimeOffset < 72 ? 3 : 6)}h`)
-  ]);
 
   await getContingencyTable(settings.simStart, currentTimeOffset, settings.distThreshold, settings.requiredRatio, settings.lineType);
   toggleInputs(true);

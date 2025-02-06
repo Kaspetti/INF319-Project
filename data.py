@@ -9,7 +9,6 @@ from line_reader import Line, get_all_lines_in_ens, get_all_lines
 
 import numpy as np
 from scipy.spatial.distance import cdist
-# from alive_progress import alive_it
 import networkx as nx
 
 from multiscale import IcoPoint, multiscale
