@@ -9,7 +9,7 @@ from pydantic import BaseModel
 import webview
 import numpy as np
 
-from data import Network, generate_network
+from data import Network, TypedConnection, generate_network
 from line_reader import get_all_lines_at_time
 from multiscale import multiscale
 from tracking import create_clustermap
@@ -247,6 +247,46 @@ def get_timestep_data(settings: Settings, networks: dict[str, Network], continge
             network_t1["node_clusters"][line_id] = int(mappings.get(str(original_cluster), str(original_cluster)))
         # Else: leave as -1/no_match
 
+    new_clusters = {}
+    for old_id, connections in network_t1["clusters"].items():
+        # Preserve special cases
+        if old_id in ["no_match", "-1"]:
+            new_clusters[old_id] = connections
+            continue
+        
+        # Get mapped ID (fallback to original if not in mapping)
+        new_id = mappings.get(old_id, old_id)
+        
+        # Merge connections for mapped clusters
+        if new_id in new_clusters:
+            new_clusters[new_id].extend(connections)
+        else:
+            new_clusters[new_id] = connections.copy()
+
+    network_t1["clusters"] = new_clusters
+
+    # Update contingency table with mappings and group merged columns
+    new_contingency = contingency_table.rename(columns=mappings)
+    new_contingency = new_contingency.groupby(level=0, axis=1).sum()
+
+    # Get all unique cluster IDs from both rows and columns
+    all_clusters = sorted(
+        set(new_contingency.index).union(set(new_contingency.columns)),
+        key=lambda x: (
+            -2 if x == "-1" else  # "-1" first
+            100 if x == "no_match" else  # "no_match" last
+            float(x)  # Numeric clusters sorted numerically
+        )
+    )
+
+    # Make the table square by reindexing rows/columns and filling missing values with 0
+    new_contingency = new_contingency.reindex(
+        index=all_clusters, 
+        columns=all_clusters
+    ).fillna(0).astype(int)
+
+    contingency_tables[network_key_t0] = new_contingency
+
 
 if __name__ == "__main__":
     init_files()
@@ -257,7 +297,6 @@ if __name__ == "__main__":
     trackings = load_tracking()
 
     get_timestep_data(settings, networks, contingency_tables, trackings, 0)
-    key = "20241019003500.05jet"
 
     api = Api(networks, contingency_tables, trackings, settings)
     _ = webview.create_window('INF319', 'assets/index.html', js_api=api, min_size=(1280, 720))
