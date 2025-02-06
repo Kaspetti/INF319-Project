@@ -1,12 +1,13 @@
 import json
 import os
 from typing import Literal
+import sys
 
 from filelock import BaseFileLock, FileLock
 import pandas as pd
-from pandas.compat import sys
 from pydantic import BaseModel
 import webview
+import numpy as np
 
 from data import Network, generate_network
 from line_reader import get_all_lines_at_time
@@ -176,7 +177,6 @@ def get_timestep_data(settings: Settings, networks: dict[str, Network], continge
     network_key_t1 = settings.simStart + str(t1) + str(settings.distThreshold) + str(settings.requiredRatio) + settings.lineType
     if not network_key_t1 in networks:
         ico_points_t1, line_points_t1 = multiscale(lines_t1, 2)
-
         network_t1 = generate_network(lines_t1, ico_points_t1, line_points_t1, settings.distThreshold, settings.requiredRatio)
     else:
         network_t1 = networks[network_key_t1]
@@ -190,15 +190,62 @@ def get_timestep_data(settings: Settings, networks: dict[str, Network], continge
         contingency_table = contingency_tables[network_key_t0]
         tracking = tracking = trackings[network_key_t0]
 
+    # save_network(network_t0, settings, t0)
+    # save_network(network_t1, settings, t1)
+    # save_contingency_table(contingency_table, settings, t0)
+    # save_tracking(tracking, settings, t0)
 
-    # for t0_id, t1_id in tracking:
-    #     network_t1["node_clusters"][t1_id] = network_t0["node_clusters"][t0_id]
-    
-    save_network(network_t0, settings, t0)
-    save_network(network_t1, settings, t1)
-    save_contingency_table(contingency_table, settings, t0)
-    save_tracking(tracking, settings, t0)
+    # Initialize mappings and track used IDs
+    mappings = {}
+    used_t0_ids = set(network_t0["clusters"].keys())
+    new_id_counter = max(map(int, used_t0_ids)) + 1 if used_t0_ids else 0
 
+    # Step 1: Handle splits and one-to-one mappings
+    for cluster_t0, conns in network_t0["clusters"].items():
+        # Get transitions from t0 cluster to t1 clusters (ignore -1/no_match)
+        transitions = contingency_table.loc[cluster_t0][
+            (contingency_table.loc[cluster_t0] != 0) & 
+            (~contingency_table.columns.isin(["no_match", "-1"]))
+        ].index.tolist()
+
+        # Assign ALL valid t1 transitions to the original t0 ID (split handling)
+        for cluster_t1 in transitions:
+            if cluster_t1 not in mappings:
+                mappings[cluster_t1] = str(cluster_t0)
+
+
+    # Step 2: Handle merges and new clusters
+    for cluster_t1 in network_t1["clusters"].keys():
+        # Skip -1/no_match (they are not real clusters)
+        if cluster_t1 in ["no_match", "-1"]:
+            continue
+
+        if cluster_t1 not in mappings:
+            # Find all contributing t0 clusters (excluding -1/no_match)
+            contributing_t0 = contingency_table[cluster_t1][
+                (contingency_table[cluster_t1] > 0) & 
+                (~contingency_table.index.isin(["no_match", "-1"]))
+            ].index.tolist()
+
+            if contributing_t0:
+                # Assign to largest contributing t0 cluster
+                best_t0 = max(
+                    contributing_t0, 
+                    key=lambda x: contingency_table.loc[x, cluster_t1]
+                )
+                mappings[cluster_t1] = str(best_t0)
+            else:
+                # Assign new ID (no lineage)
+                mappings[cluster_t1] = str(new_id_counter)
+                new_id_counter += 1
+
+    # Step 3: Update network_t1 cluster IDs (preserve -1/no_match)
+    for line_id in network_t1["node_clusters"]:
+        original_cluster = network_t1["node_clusters"][line_id]
+        # Only update if it's a mappable cluster (not -1/no_match)
+        if original_cluster not in ["no_match", "-1"]:
+            network_t1["node_clusters"][line_id] = int(mappings.get(str(original_cluster), str(original_cluster)))
+        # Else: leave as -1/no_match
 
 
 if __name__ == "__main__":
@@ -208,7 +255,9 @@ if __name__ == "__main__":
     networks = load_networks()
     contingency_tables = load_contingency_tables()
     trackings = load_tracking()
+
     get_timestep_data(settings, networks, contingency_tables, trackings, 0)
+    key = "20241019003500.05jet"
 
     api = Api(networks, contingency_tables, trackings, settings)
     _ = webview.create_window('INF319', 'assets/index.html', js_api=api, min_size=(1280, 720))

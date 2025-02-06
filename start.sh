@@ -1,4 +1,4 @@
 #!/bin/bash
 
 npm run build
-python3 app.py "$@"
+python3 _app.py "$@"

@@ -23,9 +23,11 @@ let lineLayerRight: L.LayerGroup;
 let linesRight: L.Polyline[] = [];
 let t1NodeClusters: Record<string, string>;
 
-let lineColormap: ScaleOrdinal<string, string, never>;
+let lineColormap: ScaleOrdinal<string, string, never> = scaleOrdinal<string, string>(schemeCategory10)
+                                                          .domain(Array.from({length: 50}, (_, i) => i.toString()))
 
 function initMapsContainers(leftContainerId: string, rightContainerId: string): void {
+
   if (!mapLeft) {
     mapLeft = L.map(leftContainerId).setView([20, 0], 1);
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}.png', {
@@ -155,9 +157,6 @@ async function _populateMap(
 ) {
   const data = await pywebview.api.get_lines(simStart, timeOffset, lineType); 
 
-  lineColormap = scaleOrdinal<string, string>(schemeCategory10)
-    .domain([...Object.values(nodeClusters)])
-
   data.forEach(function(l) {
     const min = Math.min(...l.coords.map(coord => coord.lon))
     const max = Math.max(...l.coords.map(coord => coord.lon))
@@ -172,6 +171,11 @@ async function _populateMap(
     }
 
     const lineColor = nodeClusters[l.id] == "-1" ? "#fff" : lineColormap(nodeClusters[l.id])
+
+    if (l.id === "0|1" || l.id === "0|2") {
+      console.log(nodeClusters[l.id], lineColor)
+    }
+
     const line = L.polyline(latLons, 
       { 
         weight: 2,
