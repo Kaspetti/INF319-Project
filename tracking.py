@@ -19,7 +19,7 @@ class Row(TypedDict):
 
 
 # def create_clustermap(simstart: str, time_offset: int, line_type: Literal["mta", "jet"]) -> list[list[int]]:
-def create_clustermap(lines_t0: list[Line], lines_t1: list[Line], network_t0: Network, network_t1: Network) -> tuple[DataFrame, list[tuple[str, str]]]:#list[list[int]]:
+def create_clustermap(lines_t0: list[Line], lines_t1: list[Line], network_t0: Network, network_t1: Network) -> DataFrame:#list[list[int]]:
     # Generate clusters at t0
     # lines_t0 = get_all_lines_at_time(simstart, time_offset, line_type)
     # ico_points_ms_t0, line_points_ms_t0 = multiscale(lines_t0, 2)
@@ -103,7 +103,7 @@ def create_clustermap(lines_t0: list[Line], lines_t1: list[Line], network_t0: Ne
     # contingency.index = new_index   # type: ignore
     # contingency.columns = new_columns
 
-    return contingency, all_matches
+    return contingency
     # return contingency.to_numpy().tolist();
 
 

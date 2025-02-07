@@ -32,16 +32,14 @@ class Settings(BaseModel):
 class Api:
     networks: dict[str, Network]
     contingency_tables: dict[str, pd.DataFrame]
-    trackings: dict[str, list[tuple[str, str]]]
 
     settings: Settings
 
     lines_lock: BaseFileLock
 
-    def __init__(self, networks: dict[str, Network], contingency_tables: dict[str, pd.DataFrame], trackings: dict[str, list[tuple[str, str]]], settings: Settings):
+    def __init__(self, networks: dict[str, Network], contingency_tables: dict[str, pd.DataFrame], settings: Settings):
         self.networks = networks
         self.contingency_tables = contingency_tables
-        self.trackings = trackings
         self.settings = settings
 
         self.lines_lock = FileLock("lines.json.lock")
@@ -151,7 +149,7 @@ def load_tracking() -> dict[str, list[tuple[str, str]]]:
         return content
 
 
-def get_timestep_data(settings: Settings, networks: dict[str, Network], contingency_tables: dict[str, pd.DataFrame], trackings: dict[str, list[tuple[str, str]]], t0: int): 
+def get_timestep_data(settings: Settings, networks: dict[str, Network], contingency_tables: dict[str, pd.DataFrame], t0: int): 
     """Gets all the data for the current and next timestep
 
     Parameters
@@ -170,30 +168,29 @@ def get_timestep_data(settings: Settings, networks: dict[str, Network], continge
     if not network_key_t0 in networks:
         ico_points_t0, line_points_t0 = multiscale(lines_t0, 2)
         network_t0 = generate_network(lines_t0, ico_points_t0, line_points_t0, settings.distThreshold, settings.requiredRatio)
+        save_network(network_t0, settings, t0)
     else:
         network_t0 = networks[network_key_t0]
+
 
     network_t1: Network
     network_key_t1 = settings.simStart + str(t1) + str(settings.distThreshold) + str(settings.requiredRatio) + settings.lineType
     if not network_key_t1 in networks:
         ico_points_t1, line_points_t1 = multiscale(lines_t1, 2)
         network_t1 = generate_network(lines_t1, ico_points_t1, line_points_t1, settings.distThreshold, settings.requiredRatio)
+        save_network(network_t1, settings, t1)
     else:
         network_t1 = networks[network_key_t1]
 
+    # contingency_table: pd.DataFrame
+    # if not network_key_t0 in contingency_tables:
+    contingency_table = create_clustermap(lines_t0, lines_t1, network_t0, network_t1)
+    contingency_table.index = contingency_table.index.astype(str)
+    contingency_table.columns = contingency_table.columns.astype(str)
+    #     save_contingency_table(contingency_table, settings, t0)
+    # else:
+    #     contingency_table = contingency_tables[network_key_t0]
 
-    contingency_table: pd.DataFrame
-    tracking: list[tuple[str, str]]
-    if not network_key_t0 in contingency_tables or not network_key_t0 in trackings:
-        contingency_table, tracking = create_clustermap(lines_t0, lines_t1, network_t0, network_t1)
-    else:
-        contingency_table = contingency_tables[network_key_t0]
-        tracking = tracking = trackings[network_key_t0]
-
-    # save_network(network_t0, settings, t0)
-    # save_network(network_t1, settings, t1)
-    # save_contingency_table(contingency_table, settings, t0)
-    # save_tracking(tracking, settings, t0)
 
     # Initialize mappings and track used IDs
     mappings = {}
@@ -203,15 +200,15 @@ def get_timestep_data(settings: Settings, networks: dict[str, Network], continge
     # Step 1: Handle splits and one-to-one mappings
     for cluster_t0, conns in network_t0["clusters"].items():
         # Get transitions from t0 cluster to t1 clusters (ignore -1/no_match)
-        transitions = contingency_table.loc[cluster_t0][
-            (contingency_table.loc[cluster_t0] != 0) & 
-            (~contingency_table.columns.isin(["no_match", "-1"]))
+        transitions = contingency_table.loc[str(cluster_t0)][
+            (contingency_table.loc[str(cluster_t0)] != 0) & 
+            (~contingency_table.columns.isin(["no_match", "-1", -1]))
         ].index.tolist()
 
         # Assign ALL valid t1 transitions to the original t0 ID (split handling)
         for cluster_t1 in transitions:
             if cluster_t1 not in mappings:
-                mappings[cluster_t1] = str(cluster_t0)
+                mappings[str(cluster_t1)] = str(cluster_t0)
 
 
     # Step 2: Handle merges and new clusters
@@ -222,40 +219,44 @@ def get_timestep_data(settings: Settings, networks: dict[str, Network], continge
 
         if cluster_t1 not in mappings:
             # Find all contributing t0 clusters (excluding -1/no_match)
-            contributing_t0 = contingency_table[cluster_t1][
-                (contingency_table[cluster_t1] > 0) & 
-                (~contingency_table.index.isin(["no_match", "-1"]))
+            contributing_t0 = contingency_table[str(cluster_t1)][
+                (contingency_table[str(cluster_t1)] > 0) & 
+                (~contingency_table.index.isin(["no_match", "-1", -1]))
             ].index.tolist()
 
             if contributing_t0:
                 # Assign to largest contributing t0 cluster
                 best_t0 = max(
                     contributing_t0, 
-                    key=lambda x: contingency_table.loc[x, cluster_t1]
+                    key=lambda x: contingency_table.loc[x, str(cluster_t1)]
                 )
-                mappings[cluster_t1] = str(best_t0)
+                mappings[str(cluster_t1)] = str(best_t0)
             else:
                 # Assign new ID (no lineage)
-                mappings[cluster_t1] = str(new_id_counter)
+                mappings[str(cluster_t1)] = str(new_id_counter)
                 new_id_counter += 1
+
 
     # Step 3: Update network_t1 cluster IDs (preserve -1/no_match)
     for line_id in network_t1["node_clusters"]:
         original_cluster = network_t1["node_clusters"][line_id]
         # Only update if it's a mappable cluster (not -1/no_match)
-        if original_cluster not in ["no_match", "-1"]:
-            network_t1["node_clusters"][line_id] = int(mappings.get(str(original_cluster), str(original_cluster)))
+        if original_cluster != -1:
+            network_t1["node_clusters"][line_id] = int(mappings[str(original_cluster)])
         # Else: leave as -1/no_match
-
+ 
     new_clusters = {}
     for old_id, connections in network_t1["clusters"].items():
+        old_id = str(old_id)
         # Preserve special cases
-        if old_id in ["no_match", "-1"]:
+        if old_id in ["no_match", "-1", -1]:
             new_clusters[old_id] = connections
             continue
         
         # Get mapped ID (fallback to original if not in mapping)
-        new_id = mappings.get(old_id, old_id)
+        if not old_id in mappings:
+            continue
+        new_id = mappings[old_id]
         
         # Merge connections for mapped clusters
         if new_id in new_clusters:
@@ -286,6 +287,8 @@ def get_timestep_data(settings: Settings, networks: dict[str, Network], continge
     ).fillna(0).astype(int)
 
     contingency_tables[network_key_t0] = new_contingency
+    networks[network_key_t0] = network_t0
+    networks[network_key_t1] = network_t1
 
 
 if __name__ == "__main__":
@@ -294,11 +297,15 @@ if __name__ == "__main__":
 
     networks = load_networks()
     contingency_tables = load_contingency_tables()
-    trackings = load_tracking()
 
-    get_timestep_data(settings, networks, contingency_tables, trackings, 0)
+    t0 = 0
+    while t0 <= 24:
+        print("Fetching data for: ", t0)
+        get_timestep_data(settings, networks, contingency_tables, t0)
 
-    api = Api(networks, contingency_tables, trackings, settings)
+        t0 += 3 if t0 < 72 else 6
+
+    api = Api(networks, contingency_tables, settings)
     _ = webview.create_window('INF319', 'assets/index.html', js_api=api, min_size=(1280, 720))
 
     debug = False

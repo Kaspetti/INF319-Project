@@ -156,6 +156,7 @@ async function _populateMap(
   lineType: "jet" | "mta"
 ) {
   const data = await pywebview.api.get_lines(simStart, timeOffset, lineType); 
+  linesArray.splice(0, linesArray.length);
 
   data.forEach(function(l) {
     const min = Math.min(...l.coords.map(coord => coord.lon))
@@ -171,10 +172,6 @@ async function _populateMap(
     }
 
     const lineColor = nodeClusters[l.id] == "-1" ? "#fff" : lineColormap(nodeClusters[l.id])
-
-    if (l.id === "0|1" || l.id === "0|2") {
-      console.log(nodeClusters[l.id], lineColor)
-    }
 
     const line = L.polyline(latLons, 
       { 
